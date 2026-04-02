@@ -807,17 +807,16 @@
                 // SISTEMA DE INERCIA Y FRENO DINÁMICO CORREGIDO
                 if (keys['a']) { 
                     if (this.vx > 0) {
-                        this.vx -= this.acceleration * 4; // Freno muy rápido para anular la inercia opuesta
+                        this.vx -= this.acceleration * 4; // Freno rápido
                     } else {
-                        this.vx -= this.acceleration; // Aceleración progresiva normal hacia la izquierda
+                        this.vx -= this.acceleration; // Aceleración normal
                     }
                     isAccelerating = true; 
-                }
-                if (keys['d']) { 
+                } else if (keys['d']) { // Usar else if previene que peleen ambas teclas a la vez
                     if (this.vx < 0) {
-                        this.vx += this.acceleration * 4; // Freno muy rápido para anular la inercia opuesta
+                        this.vx += this.acceleration * 4; // Freno rápido
                     } else {
-                        this.vx += this.acceleration; // Aceleración progresiva normal hacia la derecha
+                        this.vx += this.acceleration; // Aceleración normal
                     }
                     isAccelerating = true; 
                 }
@@ -846,7 +845,11 @@
             if (this.y > SURFACE_LEVEL + 15) { this.y = SURFACE_LEVEL + 15; this.vy = 0; }
             if (this.y < SEABED_LEVEL + this.hitboxHeight / 2) { this.y = SEABED_LEVEL + this.hitboxHeight / 2; this.vy = 0; }
 
-            this.visualMesh.rotation.y = this.facingRight ? 0 : Math.PI; this.visualMesh.rotation.z = THREE.MathUtils.lerp(this.visualMesh.rotation.z, this.vy * 0.08, 0.08);
+            // ANIMACIÓN DE GIRO SUAVE Y CABECEO
+            let targetRotY = this.facingRight ? 0 : Math.PI;
+            this.visualMesh.rotation.y += (targetRotY - this.visualMesh.rotation.y) * 0.15;
+            this.visualMesh.rotation.z = THREE.MathUtils.lerp(this.visualMesh.rotation.z, this.vy * 0.08, 0.08);
+            
             if (isCurrentlyUnderwater) this.emitBubbles();
 
             if (gameState.health <= 40 && !gameState.isAutoPiloting && !isInvulnerable && Math.random() > 0.5) {
@@ -1329,36 +1332,49 @@
         });
     }
 
+    // BOTONES MÓVILES MEJORADOS (Previene solapamientos y cuelgues)
     const fireBtn = document.getElementById('mobile-fire-btn');
     fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameState.isPaused && gameState.isRunning) keys[' '] = true; }, {passive: false});
     fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys[' '] = false; }, {passive: false});
+    fireBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[' '] = false; }, {passive: false});
 
     const btnFwd = document.getElementById('btn-fwd');
     btnFwd.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
         if(!gameState.isPaused && gameState.isRunning) { 
             keys['d'] = true; 
+            keys['a'] = false; // Exclusividad: anula la otra tecla
             if(player2D) player2D.facingRight = true; 
         } 
     }, {passive: false});
     btnFwd.addEventListener('touchend', (e) => { e.preventDefault(); keys['d'] = false; }, {passive: false});
+    btnFwd.addEventListener('touchcancel', (e) => { e.preventDefault(); keys['d'] = false; }, {passive: false});
 
     const btnRev = document.getElementById('btn-rev');
     btnRev.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
         if(!gameState.isPaused && gameState.isRunning) { 
             keys['a'] = true; 
+            keys['d'] = false; // Exclusividad: anula la otra tecla
             if(player2D) player2D.facingRight = false; 
         } 
     }, {passive: false});
     btnRev.addEventListener('touchend', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
+    btnRev.addEventListener('touchcancel', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
 
+    // TECLADO PC (También con exclusividad mutua para consistencia)
     window.addEventListener('keydown', e => { 
         if (e.key === ' ') { if(document.getElementById('initials-modal').style.display === 'flex') return; e.preventDefault(); }
         if (gameState.isAutoPiloting) return; 
         
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { if (player2D) player2D.facingRight = false; }
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { if (player2D) player2D.facingRight = true; }
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { 
+            keys['a'] = true; keys['d'] = false; 
+            if (player2D) player2D.facingRight = false; 
+        }
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { 
+            keys['d'] = true; keys['a'] = false; 
+            if (player2D) player2D.facingRight = true; 
+        }
         
         keys[e.key] = true; 
         if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
