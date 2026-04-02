@@ -25,9 +25,9 @@
         #game-wrapper {
             position: relative;
             width: 100vw;
-            height: 56.25vw; /* Proporción 16:9 exacta */
+            height: 56.25vw; 
             max-height: 100vh;
-            max-width: 177.77vh; /* Límite para pantallas muy anchas */
+            max-width: 177.77vh; 
             background-color: #050a15;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0,255,204,0.1);
@@ -68,7 +68,7 @@
         #initials-input { font-size: 25px; width: 100px; text-align: center; background: #111; color: #00ffcc; border: 2px solid #00ffcc; border-radius: 8px; padding: 5px; margin-bottom: 20px; font-family: monospace; }
         #save-score-btn { font-size: 16px; padding: 10px 20px; }
 
-        /* UI DEL JUEGO REDUCIDA (Móvil First) - CORRECCIÓN: Safe Areas en padding */
+        /* UI DEL JUEGO REDUCIDA */
         #ui-layer { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: space-between; 
             padding: calc(10px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); 
@@ -108,7 +108,7 @@
         #game-over-buttons { display: flex; gap: 10px; }
         button { padding: 10px 25px; font-size: 14px; font-weight: bold; border: none; border-radius: 20px; cursor: pointer; text-transform: uppercase; }
 
-        /* CONTROLES SUPERIORES (Pausa, Sonido) - CORRECCIÓN: Safe Areas */
+        /* CONTROLES SUPERIORES (Pausa, Sonido) */
         #top-controls { 
             position: absolute; 
             top: calc(10px + env(safe-area-inset-top)); 
@@ -117,17 +117,22 @@
         }
         .top-btn { padding: 6px 12px; font-size: 12px; background: rgba(50,50,50,0.8); border: 1px solid #777; pointer-events: auto; color: white; border-radius: 5px; }
 
-        /* === NUEVOS CONTROLES MÓVILES (Con márgenes de seguridad para pantallas curvas/notches) === */
-        
-        /* CORRECCIÓN: Radar Safe Areas */
+        /* RADAR ARRIBA EN EL CENTRO */
         #radar-canvas { 
             position: absolute; 
-            bottom: calc(100px + env(safe-area-inset-bottom)); 
-            left: calc(35px + env(safe-area-inset-left)); 
-            z-index: 10; background-color: #021102; border: 2px solid #00ff00; border-radius: 0 0 50px 50px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); pointer-events: none; 
+            top: env(safe-area-inset-top); 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 10; 
+            background-color: #021102; 
+            border: 2px solid #00ff00; 
+            border-top: none; 
+            border-radius: 0 0 50px 50px; 
+            box-shadow: 0 5px 10px rgba(0, 255, 0, 0.5); 
+            pointer-events: none; 
         }
         
-        /* Botones de Avanzar/Retroceder (Izquierda) - CORRECCIÓN: Safe Areas */
+        /* Botones de Avanzar/Retroceder (Izquierda) */
         #mobile-move-controls {
             position: absolute; 
             bottom: calc(30px + env(safe-area-inset-bottom)); 
@@ -141,7 +146,7 @@
         }
         .move-btn:active { background: rgba(0, 255, 204, 0.7); transform: scale(0.9); }
 
-        /* Botón de Disparo (Derecha) - CORRECCIÓN: Safe Areas */
+        /* Botón de Disparo (Derecha) */
         #mobile-fire-btn {
             position: absolute; 
             bottom: calc(30px + env(safe-area-inset-bottom)); 
@@ -154,7 +159,7 @@
         }
         #mobile-fire-btn:active { background: rgba(255, 0, 0, 0.8); transform: scale(0.9); }
 
-        /* BOTÓN PANTALLA COMPLETA (Inteligente) - CORRECCIÓN: Safe Areas */
+        /* BOTÓN PANTALLA COMPLETA */
         #fullscreen-btn {
             position: absolute; 
             top: calc(10px + env(safe-area-inset-top)); 
@@ -179,7 +184,7 @@
         <div class="controls-info">
             <strong>CONTROLES MÓVIL:</strong><br>
             [Inclinar Arriba/Abajo] - Inmersión<br>
-            [Botones ◀ ▶] - Navegar<br>
+            [Botones ◀ ▶] - Rotar y Avanzar<br>
             [Botón 🎯] - Torpedo
         </div>
 
@@ -348,7 +353,6 @@
         document.getElementById('top-controls').style.display = 'flex';
         document.getElementById('radar-canvas').style.display = 'block';
         
-        // Mostrar siempre controles móviles (Diseñado para móvil)
         document.getElementById('mobile-fire-btn').style.display = 'flex';
         document.getElementById('mobile-move-controls').style.display = 'flex';
         
@@ -404,7 +408,6 @@
     }
     const tPowerUpTexture = createTPowerUpTexture();
 
-    // -- BLOQUE DE SONIDOS --
     function playSonarPing() { if (isMuted) return; sonarAudio.currentTime = 0; sonarAudio.play().catch(e=>{}); }
     function playExplosionSound() {
         if (isMuted) return; if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -800,8 +803,25 @@
             if (gameState.fuel > 0) {
                 if (keys['w']) { this.vy += this.acceleration; isAccelerating = true; }
                 if (keys['s']) { this.vy -= this.acceleration; isAccelerating = true; }
-                if (keys['a']) { this.vx -= this.acceleration; isAccelerating = true; }
-                if (keys['d']) { this.vx += this.acceleration; isAccelerating = true; }
+                
+                // SISTEMA DE INERCIA Y FRENO DINÁMICO CORREGIDO
+                if (keys['a']) { 
+                    if (this.vx > 0) {
+                        this.vx -= this.acceleration * 4; // Freno muy rápido para anular la inercia opuesta
+                    } else {
+                        this.vx -= this.acceleration; // Aceleración progresiva normal hacia la izquierda
+                    }
+                    isAccelerating = true; 
+                }
+                if (keys['d']) { 
+                    if (this.vx < 0) {
+                        this.vx += this.acceleration * 4; // Freno muy rápido para anular la inercia opuesta
+                    } else {
+                        this.vx += this.acceleration; // Aceleración progresiva normal hacia la derecha
+                    }
+                    isAccelerating = true; 
+                }
+
                 if (isAccelerating) gameState.fuel = Math.max(0, gameState.fuel - gameState.fuelDepletionRate);
             } else { this.vy += 0.04; }
 
@@ -1270,7 +1290,7 @@
 
     function startLevel(levelNum) {
         gameState = { isRunning: true, isPaused: false, score: savedScore, depth: 0, health: 100, maxHealth: 100, oxygen: 100, maxOxygen: 100, fuel: 100, maxFuel: 100, torpedoes: savedTorpedoes, invulnerabilityTimer: 0, oxygenDepletionRate: 0.01 + (levelNum * 0.001), oxygenRecoveryRate: 0.333, fuelDepletionRate: 0.02 + (levelNum * 0.002), screenShake: 0, isAutoPiloting: false, gameOverTriggered: false, level: levelNum, requiredTotalKills: levelConfigs[levelNum-1].kills, kills: { cargo: 0, meta: 0, dest: 0, frig: 0, miss: 0, drone: 0 } };
-        lastLeftPress = 0; lastRightPress = 0; keys = {}; // Limpiar teclas activas
+        lastLeftPress = 0; lastRightPress = 0; keys = {}; 
         
         ['pressure-warning', 'oxygen-warning', 'autopilot-notification', 'objective-warning', 'pause-overlay', 'game-over-screen', 'initials-modal'].forEach(id => document.getElementById(id).style.display = id.includes('warning') ? '' : 'none');
         document.getElementById('pressure-warning').style.visibility = 'hidden'; document.getElementById('oxygen-warning').style.visibility = 'hidden';
@@ -1286,16 +1306,14 @@
     function resetGame() { savedScore = 0; savedTorpedoes = 10; startLevel(1); }
     function nextLevel() { if (gameState.level < 10) { savedScore = gameState.score; savedTorpedoes = gameState.torpedoes; startLevel(gameState.level + 1); } }
 
-    // --- NUEVO SISTEMA DE CONTROL MÓVIL ---
     function activarAcelerometro() {
         window.addEventListener('devicemotion', (e) => {
             if (!gameState.isRunning || gameState.isAutoPiloting || gameState.isPaused) return;
             let gravY = e.accelerationIncludingGravity.y; if (gravY === null) return;
 
-            // Ahora el giroscopio SOLO controla Arriba (W) y Abajo (S).
             keys['w'] = false; keys['s'] = false;
             
-            const deadZone = 2.0; // Ampliado un poco para descansar la mano cómodamente
+            const deadZone = 2.0; 
             let orientation = window.orientation || (screen.orientation || {}).angle || 0;
 
             if (orientation === 90 || orientation === -270) {
@@ -1304,19 +1322,17 @@
             } else if (orientation === -90 || orientation === 270) {
                 if (gravY < -deadZone) keys['w'] = true;
                 if (gravY > deadZone) keys['s'] = true;
-            } else { // Fallback por si lo agarran vertical
+            } else { 
                 if (gravY < -deadZone) keys['w'] = true;
                 if (gravY > deadZone) keys['s'] = true;
             }
         });
     }
 
-    // Botón de Disparo
     const fireBtn = document.getElementById('mobile-fire-btn');
     fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameState.isPaused && gameState.isRunning) keys[' '] = true; }, {passive: false});
     fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys[' '] = false; }, {passive: false});
 
-    // Botón de Avanzar (Derecha)
     const btnFwd = document.getElementById('btn-fwd');
     btnFwd.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
@@ -1327,7 +1343,6 @@
     }, {passive: false});
     btnFwd.addEventListener('touchend', (e) => { e.preventDefault(); keys['d'] = false; }, {passive: false});
 
-    // Botón de Retroceder (Izquierda)
     const btnRev = document.getElementById('btn-rev');
     btnRev.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
@@ -1338,7 +1353,6 @@
     }, {passive: false});
     btnRev.addEventListener('touchend', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
 
-    // Mantengo los controles de PC para poder testear desde el ordenador
     window.addEventListener('keydown', e => { 
         if (e.key === ' ') { if(document.getElementById('initials-modal').style.display === 'flex') return; e.preventDefault(); }
         if (gameState.isAutoPiloting) return; 
