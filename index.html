@@ -69,7 +69,7 @@
         #save-score-btn { font-size: 16px; padding: 10px 20px; }
 
         /* UI DEL JUEGO REDUCIDA (Móvil First) */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 10px 15px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 15%); z-index: 5; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 10px 20px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 15%); z-index: 5; }
         .ui-section { display: flex; flex-direction: column; gap: 4px; }
         .ui-item { font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000; letter-spacing: 0.5px; margin-top: 2px; }
         
@@ -108,13 +108,13 @@
         #top-controls { position: absolute; top: 10px; right: 80px; z-index: 50; display: flex; gap: 8px; pointer-events: none; }
         .top-btn { padding: 6px 12px; font-size: 12px; background: rgba(50,50,50,0.8); border: 1px solid #777; pointer-events: auto; color: white; border-radius: 5px; }
 
-        /* RADAR REDUCIDO */
-        #radar-canvas { position: absolute; bottom: 85px; left: 15px; z-index: 10; background-color: #021102; border: 2px solid #00ff00; border-radius: 0 0 50px 50px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); pointer-events: none; }
+        /* === NUEVOS CONTROLES MÓVILES (Con márgenes de seguridad para pantallas curvas/notches) === */
         
-        /* === NUEVOS CONTROLES MÓVILES === */
+        #radar-canvas { position: absolute; bottom: 100px; left: 35px; z-index: 10; background-color: #021102; border: 2px solid #00ff00; border-radius: 0 0 50px 50px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); pointer-events: none; }
+        
         /* Botones de Avanzar/Retroceder (Izquierda) */
         #mobile-move-controls {
-            position: absolute; bottom: 15px; left: 15px; display: flex; gap: 15px; z-index: 100; pointer-events: auto;
+            position: absolute; bottom: 30px; left: 35px; display: flex; gap: 15px; z-index: 100; pointer-events: auto;
         }
         .move-btn {
             width: 55px; height: 55px; border-radius: 50%; background: rgba(0, 255, 204, 0.3);
@@ -125,7 +125,7 @@
 
         /* Botón de Disparo (Derecha) */
         #mobile-fire-btn {
-            position: absolute; bottom: 15px; right: 20px; width: 65px; height: 65px;
+            position: absolute; bottom: 30px; right: 35px; width: 65px; height: 65px;
             background: rgba(255, 0, 0, 0.4); border: 3px solid #ff4d4d; border-radius: 50%;
             font-size: 28px; color: white; z-index: 100; pointer-events: auto;
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); user-select: none; -webkit-tap-highlight-color: transparent; padding: 0;
@@ -813,7 +813,6 @@
         }
     }
 
-    // --- (RESTO DE CLASES ENEMIGAS Y OBJETOS IDÉNTICAS AL CÓDIGO ORIGINAL - COMPRIMIDAS PARA AHORRAR ESPACIO) ---
     class CargoShip2D {
         constructor(startX) {
             this.x = startX; this.y = SURFACE_LEVEL + 25; this.visualWidth = 260; this.visualHeight = 120; this.hitboxWidth = 240; this.hitboxHeight = 60; 
@@ -1295,23 +1294,34 @@
 
     // Botón de Avanzar (Derecha)
     const btnFwd = document.getElementById('btn-fwd');
-    btnFwd.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameState.isPaused && gameState.isRunning) keys['d'] = true; }, {passive: false});
+    btnFwd.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        if(!gameState.isPaused && gameState.isRunning) { 
+            keys['d'] = true; 
+            if(player2D) player2D.facingRight = true; 
+        } 
+    }, {passive: false});
     btnFwd.addEventListener('touchend', (e) => { e.preventDefault(); keys['d'] = false; }, {passive: false});
 
     // Botón de Retroceder (Izquierda)
     const btnRev = document.getElementById('btn-rev');
-    btnRev.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameState.isPaused && gameState.isRunning) keys['a'] = true; }, {passive: false});
+    btnRev.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        if(!gameState.isPaused && gameState.isRunning) { 
+            keys['a'] = true; 
+            if(player2D) player2D.facingRight = false; 
+        } 
+    }, {passive: false});
     btnRev.addEventListener('touchend', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
 
     // Mantengo los controles de PC para poder testear desde el ordenador
     window.addEventListener('keydown', e => { 
         if (e.key === ' ') { if(document.getElementById('initials-modal').style.display === 'flex') return; e.preventDefault(); }
         if (gameState.isAutoPiloting) return; 
-        if (!keys[e.key]) { 
-            const now = Date.now();
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { if (now - lastLeftPress < 300) { if (player2D) player2D.facingRight = false; } lastLeftPress = now; }
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { if (now - lastRightPress < 300) { if (player2D) player2D.facingRight = true; } lastRightPress = now; }
-        }
+        
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { if (player2D) player2D.facingRight = false; }
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { if (player2D) player2D.facingRight = true; }
+        
         keys[e.key] = true; 
         if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
     });
