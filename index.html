@@ -21,7 +21,7 @@
             overflow: hidden;
         }
 
-        /* CONTENEDOR MÁGICO 16:9 (Mantiene siempre la proporción) */
+        /* CONTENEDOR MÁGICO 16:9 */
         #game-wrapper {
             position: relative;
             width: 100vw;
@@ -36,7 +36,7 @@
         #game-canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #game-canvas-container canvas { width: 100% !important; height: 100% !important; display: block; }
         
-        /* PANTALLA DE INICIO (Adaptada a móvil) */
+        /* PANTALLA DE INICIO */
         #start-screen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: radial-gradient(circle at center, #0a1a3a 0%, #000000 100%); 
@@ -804,19 +804,18 @@
                 if (keys['w']) { this.vy += this.acceleration; isAccelerating = true; }
                 if (keys['s']) { this.vy -= this.acceleration; isAccelerating = true; }
                 
-                // SISTEMA DE INERCIA Y FRENO DINÁMICO CORREGIDO
                 if (keys['a']) { 
                     if (this.vx > 0) {
-                        this.vx -= this.acceleration * 4; // Freno rápido
+                        this.vx -= this.acceleration * 4; 
                     } else {
-                        this.vx -= this.acceleration; // Aceleración normal
+                        this.vx -= this.acceleration; 
                     }
                     isAccelerating = true; 
-                } else if (keys['d']) { // Usar else if previene que peleen ambas teclas a la vez
+                } else if (keys['d']) { 
                     if (this.vx < 0) {
-                        this.vx += this.acceleration * 4; // Freno rápido
+                        this.vx += this.acceleration * 4; 
                     } else {
-                        this.vx += this.acceleration; // Aceleración normal
+                        this.vx += this.acceleration; 
                     }
                     isAccelerating = true; 
                 }
@@ -845,7 +844,6 @@
             if (this.y > SURFACE_LEVEL + 15) { this.y = SURFACE_LEVEL + 15; this.vy = 0; }
             if (this.y < SEABED_LEVEL + this.hitboxHeight / 2) { this.y = SEABED_LEVEL + this.hitboxHeight / 2; this.vy = 0; }
 
-            // ANIMACIÓN DE GIRO SUAVE Y CABECEO
             let targetRotY = this.facingRight ? 0 : Math.PI;
             this.visualMesh.rotation.y += (targetRotY - this.visualMesh.rotation.y) * 0.15;
             this.visualMesh.rotation.z = THREE.MathUtils.lerp(this.visualMesh.rotation.z, this.vy * 0.08, 0.08);
@@ -860,15 +858,16 @@
         }
     }
 
+    // AHORA CADA ENEMIGO ES COMPLETAMENTE INDEPENDIENTE PARA EVITAR BUGS DE TEXTURAS CRUZADAS
     class CargoShip2D {
         constructor(startX) {
             this.x = startX; this.y = SURFACE_LEVEL + 25; this.visualWidth = 260; this.visualHeight = 120; this.hitboxWidth = 240; this.hitboxHeight = 60; 
             this.patrolStartX = startX - 800; this.patrolEndX = startX + 800; this.patrolDir = Math.random() > 0.5 ? 1 : -1; this.baseSpeed = 0.4; this.vx = this.baseSpeed * this.patrolDir; 
             this.fleeSpeed = 1.1; this.isFleeing = false; this.active = true; this.state = 'normal'; this.burnStartTime = 0; this.targetRotation = 0; this.fleeDir = -1; this.hp = 2; 
             this.container = new THREE.Group(); this.container.position.set(this.x, this.y, 6); entitiesGroup.add(this.container);
-            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
             this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh);
-            new THREE.TextureLoader().load('carguero_panamal.png', t => { material.map = t; material.opacity = 1; material.needsUpdate = true; });
+            new THREE.TextureLoader().load('carguero_panamal.png', t => { material.map = t; material.needsUpdate = true; });
         }
         startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 5.0); }
         update() {
@@ -895,21 +894,48 @@
         dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
     }
 
-    class Metanero2D extends CargoShip2D {
-        setupImageModel() {
-            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide });
+    class Metanero2D {
+        constructor(startX) {
+            this.x = startX; this.y = SURFACE_LEVEL + 25; this.visualWidth = 260; this.visualHeight = 120; this.hitboxWidth = 240; this.hitboxHeight = 60; 
+            this.patrolStartX = startX - 800; this.patrolEndX = startX + 800; this.patrolDir = Math.random() > 0.5 ? 1 : -1; this.baseSpeed = 0.4; this.vx = this.baseSpeed * this.patrolDir; 
+            this.fleeSpeed = 1.1; this.isFleeing = false; this.active = true; this.state = 'normal'; this.burnStartTime = 0; this.targetRotation = 0; this.fleeDir = -1; this.hp = 2; 
+            this.container = new THREE.Group(); this.container.position.set(this.x, this.y, 6); entitiesGroup.add(this.container);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
             this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh);
-            new THREE.TextureLoader().load('metanero.png', t => { material.map = t; material.opacity = 1; material.needsUpdate = true; });
+            new THREE.TextureLoader().load('metanero.png', t => { material.map = t; material.needsUpdate = true; });
         }
-        update() { super.update(); if(this.state === 'normal') this.visualMesh.rotation.y = this.vx > 0 ? 0 : Math.PI; }
+        startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 5.0); }
+        update() {
+            if (!this.active) return;
+            if (this.state === 'normal') {
+                if (!this.isFleeing) {
+                    let underAttack = activeTorpedoes.some(t => Math.abs(t.x - this.x) < 400 && Math.abs(t.y - this.y) < 200) || activeExplosions.some(e => Math.abs(e.x - this.x) < 400);
+                    if (underAttack || (player2D.y > SURFACE_LEVEL - 35 && Math.abs(player2D.x - this.x) < 500)) { this.isFleeing = true; this.fleeDir = this.x > player2D.x ? 1 : -1; }
+                }
+                this.vx = this.isFleeing ? this.fleeDir * this.fleeSpeed : this.baseSpeed * this.patrolDir;
+                if (!this.isFleeing) { if (this.x > this.patrolEndX) this.patrolDir = -1; if (this.x < this.patrolStartX) this.patrolDir = 1; }
+                this.visualMesh.rotation.y = this.vx > 0 ? 0 : Math.PI; this.x += this.vx; this.container.position.x = this.x; this.container.position.y = this.y;
+                if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
+            } else if (this.state === 'burning') {
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 100, this.y + 20, 'fire')); activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 150, this.y + 40, 'smoke')); }
+                if (Date.now() - this.burnStartTime > 4000) { this.state = 'sinking'; this.targetRotation = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4 + Math.random() * 0.5); this.spawnLoot(); }
+            } else if (this.state === 'sinking') {
+                this.y -= 1.5; this.container.position.y = this.y; this.container.rotation.z = THREE.MathUtils.lerp(this.container.rotation.z, this.targetRotation, 0.015);
+                if (Math.random() > 0.6) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 100, this.y + 20, 'smoke')); activeBubbles.push(new BubbleParticle(this.x + (Math.random() - 0.5) * 100, this.y)); }
+                if (this.y < SURFACE_LEVEL - 250) this.dispose();
+            }
+        }
+        spawnLoot() { for(let i = 0; i < 2; i++) { let r = Math.random(); if (r < 0.4) fuelsData.push(new FuelBarrel3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); else if (r < 0.7) materialsData.push(new Material3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); else if (r < 0.85) oxygenTanksData.push(new OxygenTank3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); else torpedoAmmoData.push(new TorpedoAmmo3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); } if (Math.random() < 0.03) tPowerUpsData.push(new TPowerUp3DStatic(this.x, this.y - 30, true)); }
+        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
     }
 
-    class Destroyer2D extends CargoShip2D {
+    class Destroyer2D {
         constructor(startX) {
-            super(startX); this.y = SURFACE_LEVEL + 40; this.visualWidth = 320; this.visualHeight = 150; this.hitboxWidth = 300; this.hitboxHeight = 70;
-            this.hp = 4; this.lastFired = 0; this.suspicionTimer = 0; this.vx = 0.6 * this.patrolDir; this.container.position.set(this.x, this.y, 8);
-        }
-        setupImageModel() {
+            this.x = startX; this.y = SURFACE_LEVEL + 40; this.visualWidth = 320; this.visualHeight = 150; this.hitboxWidth = 300; this.hitboxHeight = 70;
+            this.patrolStartX = startX - 800; this.patrolEndX = startX + 800; this.patrolDir = Math.random() > 0.5 ? 1 : -1; this.vx = 0.6 * this.patrolDir; 
+            this.active = true; this.state = 'normal'; this.burnStartTime = 0; this.targetRotation = 0;
+            this.hp = 4; this.lastFired = 0; this.suspicionTimer = 0;
+            this.container = new THREE.Group(); this.container.position.set(this.x, this.y, 8); entitiesGroup.add(this.container);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
             this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh);
             new THREE.TextureLoader().load('Antisubmarino.png', t => { material.map = t; material.needsUpdate = true; });
@@ -930,13 +956,31 @@
                 this.x += this.vx; this.container.position.x = this.x; this.container.position.y = this.y;
                 this.visualMesh.rotation.y = this.vx !== 0 ? (this.vx > 0 ? Math.PI : 0) : (this.x < ((currentlyDetected || this.suspicionTimer > 0) ? player2D.x : player2D.x) ? Math.PI : 0);
                 if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
-            } else { super.update(); }
+            } else if (this.state === 'burning') {
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 150, this.y + 20, 'fire')); activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 200, this.y + 40, 'smoke')); }
+                if (Date.now() - this.burnStartTime > 4000) { this.state = 'sinking'; this.targetRotation = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4 + Math.random() * 0.5); this.spawnLoot(); }
+            } else if (this.state === 'sinking') {
+                this.y -= 1.2; this.container.position.y = this.y; this.container.rotation.z = THREE.MathUtils.lerp(this.container.rotation.z, this.targetRotation, 0.015);
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 150, this.y + 20, 'smoke')); activeBubbles.push(new BubbleParticle(this.x + (Math.random() - 0.5) * 120, this.y)); }
+                if (this.y < SURFACE_LEVEL - 250) this.dispose();
+            }
         }
+        spawnLoot() { for(let i = 0; i < 3; i++) { let r = Math.random(); if (r < 0.35) fuelsData.push(new FuelBarrel3DStatic(this.x + (Math.random() - 0.5) * 200, this.y - 20, true)); else if (r < 0.60) materialsData.push(new Material3DStatic(this.x + (Math.random() - 0.5) * 200, this.y - 20, true)); else if (r < 0.75) oxygenTanksData.push(new OxygenTank3DStatic(this.x + (Math.random() - 0.5) * 200, this.y - 20, true)); else torpedoAmmoData.push(new TorpedoAmmo3DStatic(this.x + (Math.random() - 0.5) * 200, this.y - 20, true)); } if (Math.random() < 0.05) tPowerUpsData.push(new TPowerUp3DStatic(this.x, this.y - 30, true)); }
+        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
     }
 
-    class Frigate2D extends Destroyer2D {
-        constructor(startX) { super(startX); this.y = SURFACE_LEVEL + 15; this.visualWidth = 280; this.visualHeight = 130; this.hitboxWidth = 260; this.hitboxHeight = 60; this.hp = 2; this.vx = 1.2 * this.patrolDir; }
-        setupImageModel() { const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide }); this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh); new THREE.TextureLoader().load('fragata.png', t => { material.map = t; material.needsUpdate = true; }); }
+    class Frigate2D {
+        constructor(startX) {
+            this.x = startX; this.y = SURFACE_LEVEL + 15; this.visualWidth = 280; this.visualHeight = 130; this.hitboxWidth = 260; this.hitboxHeight = 60; 
+            this.patrolStartX = startX - 1000; this.patrolEndX = startX + 1000; this.patrolDir = Math.random() > 0.5 ? 1 : -1; this.vx = 1.2 * this.patrolDir; 
+            this.active = true; this.state = 'normal'; this.burnStartTime = 0; this.targetRotation = 0;
+            this.hp = 2; this.lastFired = 0; this.suspicionTimer = 0;
+            this.container = new THREE.Group(); this.container.position.set(this.x, this.y, 9); entitiesGroup.add(this.container);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
+            this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh);
+            new THREE.TextureLoader().load('fragata.png', t => { material.map = t; material.needsUpdate = true; });
+        }
+        startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 7.0); }
         update() {
             if (!this.active) return;
             if (this.state === 'normal') {
@@ -954,15 +998,30 @@
                 this.x += this.vx; this.container.position.x = this.x; this.container.position.y = this.y;
                 this.visualMesh.rotation.y = this.vx !== 0 ? (this.vx > 0 ? Math.PI : 0) : (this.x < (this.suspicionTimer > 0 && this.lastKnownPlayerX ? this.lastKnownPlayerX : player2D.x) ? Math.PI : 0);
                 if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
-            } else { super.update(); }
+            } else if (this.state === 'burning') {
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 120, this.y + 20, 'fire')); activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 150, this.y + 40, 'smoke')); }
+                if (Date.now() - this.burnStartTime > 3000) { this.state = 'sinking'; this.targetRotation = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4 + Math.random() * 0.5); this.spawnLoot(); }
+            } else if (this.state === 'sinking') {
+                this.y -= 1.5; this.container.position.y = this.y; this.container.rotation.z = THREE.MathUtils.lerp(this.container.rotation.z, this.targetRotation, 0.015);
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 120, this.y + 20, 'smoke')); activeBubbles.push(new BubbleParticle(this.x + (Math.random() - 0.5) * 100, this.y)); }
+                if (this.y < SURFACE_LEVEL - 250) this.dispose();
+            }
         }
+        spawnLoot() { for(let i = 0; i < 2; i++) { let r = Math.random(); if (r < 0.4) torpedoAmmoData.push(new TorpedoAmmo3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); else if (r < 0.7) materialsData.push(new Material3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); else oxygenTanksData.push(new OxygenTank3DStatic(this.x + (Math.random() - 0.5) * 150, this.y - 20, true)); } if (Math.random() < 0.05) tPowerUpsData.push(new TPowerUp3DStatic(this.x, this.y - 30, true)); }
+        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
     }
 
-    class Missouri2D extends CargoShip2D {
+    class Missouri2D {
         constructor(startX) {
-            super(startX); this.y = SURFACE_LEVEL + 60; this.visualWidth = 720; this.visualHeight = 320; this.hitboxWidth = 680; this.hitboxHeight = 160; this.hp = 8; this.baseSpeed = 0.3; this.lastFired = 0; this.lastMineDropped = 0; this.container.position.set(this.x, this.y, 4);
+            this.x = startX; this.y = SURFACE_LEVEL + 60; this.visualWidth = 720; this.visualHeight = 320; this.hitboxWidth = 680; this.hitboxHeight = 160; 
+            this.patrolStartX = startX - 1000; this.patrolEndX = startX + 1000; this.patrolDir = Math.random() > 0.5 ? 1 : -1; this.baseSpeed = 0.3; this.vx = this.baseSpeed * this.patrolDir; 
+            this.active = true; this.state = 'normal'; this.burnStartTime = 0; this.targetRotation = 0;
+            this.hp = 8; this.lastFired = 0; this.suspicionTimer = 0; this.lastMineDropped = 0;
+            this.container = new THREE.Group(); this.container.position.set(this.x, this.y, 4); entitiesGroup.add(this.container);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
+            this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh);
+            new THREE.TextureLoader().load('missouri.png', t => { material.map = t; material.needsUpdate = true; });
         }
-        setupImageModel() { const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide }); this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material); this.container.add(this.visualMesh); new THREE.TextureLoader().load('missouri.png', t => { material.map = t; material.needsUpdate = true; }); }
         startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 20.0); }
         update() {
             if (!this.active) return;
@@ -978,8 +1037,17 @@
                 } else { this.vx = this.baseSpeed * this.patrolDir; if (this.x > this.patrolEndX) this.patrolDir = -1; if (this.x < this.patrolStartX) this.patrolDir = 1; }
                 this.x += this.vx; this.container.position.x = this.x; this.container.position.y = this.y; this.visualMesh.rotation.y = this.vx > 0 ? Math.PI : 0; 
                 if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
-            } else { super.update(); }
+            } else if (this.state === 'burning') {
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 360, this.y + 40, 'fire')); activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 440, this.y + 80, 'smoke')); }
+                if (Date.now() - this.burnStartTime > 5000) { this.state = 'sinking'; this.targetRotation = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4 + Math.random() * 0.5); this.spawnLoot(); }
+            } else if (this.state === 'sinking') {
+                this.y -= 1.0; this.container.position.y = this.y; this.container.rotation.z = THREE.MathUtils.lerp(this.container.rotation.z, this.targetRotation, 0.015);
+                if (Math.random() > 0.4) { activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 360, this.y + 40, 'smoke')); activeBubbles.push(new BubbleParticle(this.x + (Math.random() - 0.5) * 300, this.y)); }
+                if (this.y < SURFACE_LEVEL - 250) this.dispose();
+            }
         }
+        spawnLoot() { for(let i = 0; i < 4; i++) { let r = Math.random(); if (r < 0.35) fuelsData.push(new FuelBarrel3DStatic(this.x + (Math.random() - 0.5) * 450, this.y - 40, true)); else if (r < 0.60) materialsData.push(new Material3DStatic(this.x + (Math.random() - 0.5) * 450, this.y - 40, true)); else if (r < 0.75) oxygenTanksData.push(new OxygenTank3DStatic(this.x + (Math.random() - 0.5) * 450, this.y - 40, true)); else torpedoAmmoData.push(new TorpedoAmmo3DStatic(this.x + (Math.random() - 0.5) * 450, this.y - 40, true)); } if (Math.random() < 0.10) tPowerUpsData.push(new TPowerUp3DStatic(this.x, this.y - 30, true)); }
+        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
     }
 
     class Drone2D {
@@ -1222,13 +1290,20 @@
         sinkingMinesData.forEach(m => { if (m.active && Math.abs(m.x - player2D.x) < 400 && sR > m.x - m.size - 4 && sL < m.x + m.size + 4 && sT > m.y - m.size - 4 && sB < m.y + m.size + 4) { createExplosion(m.x, m.y, 1.5); m.dispose(); if (!isInvul) { gameState.health -= 20; gameState.screenShake = 15; if (gameState.health <= 0) endGame(false); } } });
         dronesData.forEach(d => { if (d.active && d.state === 'normal' && Math.abs(d.x - player2D.x) < 200 && sR > d.x - d.hitboxWidth/2 && sL < d.x + d.hitboxWidth/2 && sT > d.y - d.hitboxHeight/2 && sB < d.y + d.hitboxHeight/2) { createExplosion(d.x, d.y, 2.0); d.startSinking(); if (!isInvul) { gameState.health -= d.ammo <= 0 ? 25 : 15; gameState.screenShake = 15; if (gameState.health <= 0) endGame(false); } } });
 
+        // CONTADORES INDEPENDIENTES REPARADOS
         activeTorpedoes.forEach(torp => {
             if (!torp.active) return;
             enemyTorpedoesData.forEach(et => { if (et.active && torp.active && Math.hypot(torp.x - et.x, torp.y - et.y) < 20) { createExplosion(torp.x, torp.y, 2.5); torp.active = false; et.dispose(); gameState.score += 50; } });
             minesData.forEach(m => { if (m.active && Math.hypot(torp.x - m.x, torp.y - m.y) < m.size + 14) { createExplosion(m.x, m.y, 1.0); m.dispose(); torp.active = false; gameState.score += 20; } });
             sinkingMinesData.forEach(m => { if (m.active && Math.hypot(torp.x - m.x, torp.y - m.y) < m.size + 14) { createExplosion(m.x, m.y, 1.5); m.dispose(); torp.active = false; gameState.score += 25; } });
             rocksData.forEach(r => { if (r.active && Math.abs(r.x - torp.x) < 200 && Math.hypot(torp.x - r.x, torp.y - r.y) < r.size * 0.85 + 10) { createExplosion(r.x, r.y, 2.5); torp.active = false; r.dispose(); gameState.score += 10; } });
-            [cargoShipsData, metanerosData, destroyersData, frigatesData, missourisData].forEach(arr => arr.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills[ship.constructor.name.replace('2D','').substring(0,4).toLowerCase()]++; } } }));
+            
+            cargoShipsData.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills.cargo++; } } });
+            metanerosData.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills.meta++; } } });
+            destroyersData.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills.dest++; } } });
+            frigatesData.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills.frig++; } } });
+            missourisData.forEach(ship => { if (ship.active && ship.state === 'normal' && torp.x > ship.x - ship.hitboxWidth/2 && torp.x < ship.x + ship.hitboxWidth/2 && torp.y > ship.y - ship.hitboxHeight/2 && torp.y < ship.y + ship.hitboxHeight/2) { createExplosion(torp.x, torp.y, 3.0); torp.active = false; ship.hp--; if (ship.hp <= 0) { ship.startSinking(); gameState.score += 250; gameState.kills.miss++; } } });
+
             dronesData.forEach(d => { if (d.active && d.state === 'normal' && torp.x > d.x - d.hitboxWidth/2 && torp.x < d.x + d.hitboxWidth/2 && torp.y > d.y - d.hitboxHeight/2 && torp.y < d.y + d.hitboxHeight/2) { createExplosion(torp.x, torp.y, 2.5); torp.active = false; d.hp--; if (d.hp <= 0) { d.startSinking(); gameState.score += 150; gameState.kills.drone++; } } });
         });
 
@@ -1332,7 +1407,6 @@
         });
     }
 
-    // BOTONES MÓVILES MEJORADOS (Previene solapamientos y cuelgues)
     const fireBtn = document.getElementById('mobile-fire-btn');
     fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameState.isPaused && gameState.isRunning) keys[' '] = true; }, {passive: false});
     fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys[' '] = false; }, {passive: false});
@@ -1342,8 +1416,7 @@
     btnFwd.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
         if(!gameState.isPaused && gameState.isRunning) { 
-            keys['d'] = true; 
-            keys['a'] = false; // Exclusividad: anula la otra tecla
+            keys['d'] = true; keys['a'] = false; 
             if(player2D) player2D.facingRight = true; 
         } 
     }, {passive: false});
@@ -1354,27 +1427,19 @@
     btnRev.addEventListener('touchstart', (e) => { 
         e.preventDefault(); 
         if(!gameState.isPaused && gameState.isRunning) { 
-            keys['a'] = true; 
-            keys['d'] = false; // Exclusividad: anula la otra tecla
+            keys['a'] = true; keys['d'] = false; 
             if(player2D) player2D.facingRight = false; 
         } 
     }, {passive: false});
     btnRev.addEventListener('touchend', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
     btnRev.addEventListener('touchcancel', (e) => { e.preventDefault(); keys['a'] = false; }, {passive: false});
 
-    // TECLADO PC (También con exclusividad mutua para consistencia)
     window.addEventListener('keydown', e => { 
         if (e.key === ' ') { if(document.getElementById('initials-modal').style.display === 'flex') return; e.preventDefault(); }
         if (gameState.isAutoPiloting) return; 
         
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { 
-            keys['a'] = true; keys['d'] = false; 
-            if (player2D) player2D.facingRight = false; 
-        }
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { 
-            keys['d'] = true; keys['a'] = false; 
-            if (player2D) player2D.facingRight = true; 
-        }
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keys['a'] = true; keys['d'] = false; if (player2D) player2D.facingRight = false; }
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys['d'] = true; keys['a'] = false; if (player2D) player2D.facingRight = true; }
         
         keys[e.key] = true; 
         if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
