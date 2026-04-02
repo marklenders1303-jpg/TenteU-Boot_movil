@@ -8,6 +8,13 @@
         body { margin: 0; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
         #game-canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         
+        /* Ajuste mágico de proporciones para Canvas */
+        #game-canvas-container canvas:not(#radar-canvas) {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+        }
+
         /* PANTALLA DE INICIO CON SCROLL DINÁMICO */
         #start-screen { 
             position: absolute; 
@@ -410,10 +417,20 @@
         const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
         const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
+        // Detectar si es un dispositivo Apple (iOS)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+            // iOS no soporta API de pantalla completa. Lo abrimos en pestaña nueva.
+            window.open(window.location.href, '_blank');
+            return;
+        }
+
         if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
             if (requestFullScreen) {
                 requestFullScreen.call(docEl).catch(err => {
-                    console.log(`Error al intentar activar el modo pantalla completa: ${err.message}`);
+                    console.log("El iframe o navegador bloqueó el fullscreen, abriendo en pestaña nueva...");
+                    window.open(window.location.href, '_blank');
                 });
             }
             document.getElementById('fullscreen-btn').innerHTML = '✖'; 
