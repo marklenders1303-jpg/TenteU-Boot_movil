@@ -858,7 +858,6 @@
         }
     }
 
-    // AHORA CADA ENEMIGO ES COMPLETAMENTE INDEPENDIENTE PARA EVITAR BUGS DE TEXTURAS CRUZADAS
     class CargoShip2D {
         constructor(startX) {
             this.x = startX; this.y = SURFACE_LEVEL + 25; this.visualWidth = 260; this.visualHeight = 120; this.hitboxWidth = 240; this.hitboxHeight = 60; 
@@ -1290,7 +1289,6 @@
         sinkingMinesData.forEach(m => { if (m.active && Math.abs(m.x - player2D.x) < 400 && sR > m.x - m.size - 4 && sL < m.x + m.size + 4 && sT > m.y - m.size - 4 && sB < m.y + m.size + 4) { createExplosion(m.x, m.y, 1.5); m.dispose(); if (!isInvul) { gameState.health -= 20; gameState.screenShake = 15; if (gameState.health <= 0) endGame(false); } } });
         dronesData.forEach(d => { if (d.active && d.state === 'normal' && Math.abs(d.x - player2D.x) < 200 && sR > d.x - d.hitboxWidth/2 && sL < d.x + d.hitboxWidth/2 && sT > d.y - d.hitboxHeight/2 && sB < d.y + d.hitboxHeight/2) { createExplosion(d.x, d.y, 2.0); d.startSinking(); if (!isInvul) { gameState.health -= d.ammo <= 0 ? 25 : 15; gameState.screenShake = 15; if (gameState.health <= 0) endGame(false); } } });
 
-        // CONTADORES INDEPENDIENTES REPARADOS
         activeTorpedoes.forEach(torp => {
             if (!torp.active) return;
             enemyTorpedoesData.forEach(et => { if (et.active && torp.active && Math.hypot(torp.x - et.x, torp.y - et.y) < 20) { createExplosion(torp.x, torp.y, 2.5); torp.active = false; et.dispose(); gameState.score += 50; } });
@@ -1388,6 +1386,11 @@
         window.addEventListener('devicemotion', (e) => {
             if (!gameState.isRunning || gameState.isAutoPiloting || gameState.isPaused) return;
             let gravY = e.accelerationIncludingGravity.y; if (gravY === null) return;
+
+            // EL TRUCO ESTÁ AQUÍ: Invertimos el giroscopio si el morro mira a la izquierda
+            if (player2D && !player2D.facingRight) {
+                gravY = -gravY;
+            }
 
             keys['w'] = false; keys['s'] = false;
             
