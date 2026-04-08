@@ -142,6 +142,34 @@
             transform: scale(0.95);
         }
 
+        /* ESTILOS DEL JOYSTICK VIRTUAL */
+        #joystick-zone {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            z-index: 100;
+            pointer-events: auto;
+            touch-action: none; 
+            display: none; 
+        }
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 204, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+        }
+
         /* BOTÓN PANTALLA COMPLETA */
         #fullscreen-btn {
             position: absolute;
@@ -181,6 +209,8 @@
             #mobile-fire-btn { width: 60px; height: 60px; font-size: 25px; bottom: 20px; right: 20px; }
             #start-screen h1 { font-size: 45px; }
             .sub-option { padding: 8px 15px; font-size: 14px; }
+            #joystick-zone { width: 90px; height: 90px; bottom: 20px; left: 20px; }
+            #joystick-knob { width: 40px; height: 40px; }
         }
 
         /* FIX PANTALLA VERTICAL: Aviso para forzar apaisado */
@@ -214,7 +244,7 @@
 
         <div class="controls-info">
             <strong>CONTROLES:</strong><br><br>
-            [Móvil] - Inclina para Navegar / Botón para Torpedo<br>
+            [Móvil] - Joystick para Navegar / Botón para Torpedo<br>
             [PC] - W,A,S,D para Navegar / Espacio para Torpedo
         </div>
 
@@ -301,6 +331,10 @@
     <canvas id="radar-canvas" width="200" height="112" style="display: none;"></canvas>
 
     <button id="mobile-fire-btn" style="display: none;">🎯</button>
+    
+    <div id="joystick-zone">
+        <div id="joystick-knob"></div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -402,6 +436,7 @@
         document.getElementById('bottom-controls').style.display = 'none';
         document.getElementById('radar-canvas').style.display = 'none';
         document.getElementById('mobile-fire-btn').style.display = 'none';
+        document.getElementById('joystick-zone').style.display = 'none';
         document.getElementById('game-over-screen').style.display = 'none';
         document.getElementById('initials-modal').style.display = 'none';
         
@@ -415,30 +450,16 @@
         document.getElementById('bottom-controls').style.display = 'flex';
         document.getElementById('radar-canvas').style.display = 'block';
         
-        // Mostrar el botón de disparo solo si detecta que es móvil
+        // Mostrar botones táctiles solo si detecta que es móvil
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
             document.getElementById('mobile-fire-btn').style.display = 'block';
+            document.getElementById('joystick-zone').style.display = 'block';
         }
         
         if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
         
         savedScore = 0;
         savedTorpedoes = 10;
-        
-        // Lógica para pedir permisos del acelerómetro
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-            // iOS 13+
-            DeviceMotionEvent.requestPermission()
-                .then(permissionState => {
-                    if (permissionState === 'granted') {
-                        activarAcelerometro();
-                    }
-                })
-                .catch(console.error);
-        } else {
-            // Android y navegadores antiguos
-            activarAcelerometro();
-        }
 
         startLevel(1);
     }
@@ -3430,41 +3451,6 @@
         }
     }
 
-    // Funciones añadidas para soporte táctil y acelerómetro
-    function activarAcelerometro() {
-        window.addEventListener('devicemotion', (e) => {
-            if (!gameState.isRunning || gameState.isAutoPiloting || gameState.isPaused) return;
-
-            let gravX = e.accelerationIncludingGravity.x;
-            let gravY = e.accelerationIncludingGravity.y;
-
-            if (gravX === null || gravY === null) return;
-
-            keys['w'] = false; keys['s'] = false;
-            keys['a'] = false; keys['d'] = false;
-
-            const deadZone = 1.5;
-            let orientation = window.orientation || (screen.orientation || {}).angle || 0;
-
-            if (orientation === 90 || orientation === -270) {
-                if (gravY > deadZone) keys['w'] = true;
-                if (gravY < -deadZone) keys['s'] = true;
-                if (gravX < -deadZone) keys['d'] = true;
-                if (gravX > deadZone) keys['a'] = true;
-            } else if (orientation === -90 || orientation === 270) {
-                if (gravY < -deadZone) keys['w'] = true;
-                if (gravY > deadZone) keys['s'] = true;
-                if (gravX > deadZone) keys['d'] = true;
-                if (gravX < -deadZone) keys['a'] = true;
-            } else {
-                if (gravY < -deadZone) keys['w'] = true;
-                if (gravY > deadZone) keys['s'] = true;
-                if (gravX > deadZone) keys['d'] = true;
-                if (gravX < -deadZone) keys['a'] = true;
-            }
-        });
-    }
-
     const fireBtn = document.getElementById('mobile-fire-btn');
     fireBtn.addEventListener('touchstart', (e) => {
         e.preventDefault(); 
@@ -3504,6 +3490,56 @@
     });
     
     window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    // --- LÓGICA DEL JOYSTICK VIRTUAL ---
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let joystickActive = false;
+    let joystickCenter = { x: 0, y: 0 };
+    const maxRadius = 45; 
+
+    joystickZone.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        joystickActive = true;
+        const rect = joystickZone.getBoundingClientRect();
+        joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        handleJoystick(e.touches[0]);
+    }, { passive: false });
+
+    joystickZone.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (joystickActive) handleJoystick(e.touches[0]);
+    }, { passive: false });
+
+    joystickZone.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        joystickActive = false;
+        joystickKnob.style.transform = `translate(-50%, -50%)`;
+        keys['w'] = false; keys['s'] = false; keys['a'] = false; keys['d'] = false;
+    }, { passive: false });
+
+    function handleJoystick(touch) {
+        let dx = touch.clientX - joystickCenter.x;
+        let dy = touch.clientY - joystickCenter.y;
+        const distance = Math.hypot(dx, dy);
+        
+        if (distance > maxRadius) {
+            dx = (dx / distance) * maxRadius;
+            dy = (dy / distance) * maxRadius;
+        }
+        
+        joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+        keys['w'] = false; keys['s'] = false; keys['a'] = false; keys['d'] = false;
+
+        const deadzone = 10; 
+        if (Math.abs(dx) > deadzone || Math.abs(dy) > deadzone) {
+            if (dy < -deadzone) keys['w'] = true; 
+            if (dy > deadzone) keys['s'] = true;  
+            if (dx < -deadzone) keys['a'] = true; 
+            if (dx > deadzone) keys['d'] = true;  
+        }
+    }
 
     initThreeJS(); 
 
