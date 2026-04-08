@@ -2,12 +2,21 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Juego de Submarino - Torpedos Inteligentes y Presión</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
-        #game-canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         
+        /* FIX ANDROID & IOS: Añadido 100dvh para la barra de navegación móvil */
+        #game-canvas-container { position: relative; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        
+        /* FIX ANDROID: Evitar que el canvas sobresalga de la pantalla */
+        #game-canvas-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
         /* PANTALLA DE INICIO CON SCROLL DINÁMICO */
         #start-screen { 
             position: absolute; 
@@ -57,12 +66,7 @@
         #initials-input { font-size: 40px; text-transform: uppercase; width: 150px; text-align: center; background: #111; color: #00ffcc; border: 3px solid #00ffcc; border-radius: 10px; padding: 10px; outline: none; margin-bottom: 30px; letter-spacing: 10px; font-family: 'Courier New', monospace; }
         #initials-input:focus { box-shadow: 0 0 20px rgba(0,255,204,0.5); }
 
-        #ui-layer { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; 
-            display: flex; justify-content: space-between; 
-            padding: max(25px, env(safe-area-inset-top)) max(40px, env(safe-area-inset-right)) 0 max(40px, env(safe-area-inset-left)); 
-            box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 20%); z-index: 5; 
-        }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 25px 40px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 20%); z-index: 5; }
         .ui-section { display: flex; flex-direction: column; gap: 8px; }
         .ui-item { font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,1); letter-spacing: 1.5px; }
         
@@ -109,68 +113,96 @@
         #restart-full-btn { background: linear-gradient(to bottom, #ff9966, #ff5e62); color: white; box-shadow: 0 6px 25px rgba(255, 94, 98, 0.6); }
         #restart-full-btn:hover { box-shadow: 0 10px 30px rgba(255, 94, 98, 0.8); }
 
-        #bottom-controls { 
-            position: absolute; 
-            bottom: max(25px, env(safe-area-inset-bottom)); 
-            right: calc(max(40px, env(safe-area-inset-right)) + 100px); 
-            z-index: 50; display: flex; gap: 15px; pointer-events: none; 
-        }
+        #bottom-controls { position: absolute; bottom: 25px; right: 40px; z-index: 50; display: flex; gap: 15px; pointer-events: none; }
         .bottom-btn { padding: 12px 24px; font-size: 18px; background: linear-gradient(to bottom, #444, #222); border: 2px solid #777; box-shadow: 0 4px 10px rgba(0,0,0,0.8); pointer-events: auto; cursor: pointer; color: white; border-radius: 8px; transition: all 0.2s ease; letter-spacing: normal; text-transform: none; }
         .bottom-btn:hover { background: linear-gradient(to bottom, #555, #333); box-shadow: 0 6px 15px rgba(0,0,0,0.9); transform: none; }
 
-        #radar-canvas { 
-            position: absolute; 
-            top: max(230px, env(safe-area-inset-top)); 
-            left: max(40px, env(safe-area-inset-left)); 
-            z-index: 10; background-color: #021102; border: 3px solid #00ff00; 
-            border-radius: 0 0 100px 100px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3); pointer-events: none; 
-        }
+        #radar-canvas { position: absolute; bottom: 25px; left: 40px; z-index: 10; background-color: #021102; border: 3px solid #00ff00; border-radius: 0 0 100px 100px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3); pointer-events: none; }
         
         /* BOTÓN DE DISPARO MÓVIL */
         #mobile-fire-btn {
             position: absolute;
-            bottom: max(40px, env(safe-area-inset-bottom));
-            right: max(40px, env(safe-area-inset-right));
-            width: 80px; height: 80px; background: rgba(255, 0, 0, 0.4); border: 3px solid #ff4d4d;
-            border-radius: 50%; font-size: 35px; color: white; z-index: 100; pointer-events: auto;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); user-select: none; -webkit-tap-highlight-color: transparent;
+            bottom: 40px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 0, 0, 0.4);
+            border: 3px solid #ff4d4d;
+            border-radius: 50%;
+            font-size: 35px;
+            color: white;
+            z-index: 100;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         #mobile-fire-btn:active {
             background: rgba(255, 0, 0, 0.8);
             transform: scale(0.95);
         }
 
-        /* JOYSTICK VIRTUAL */
-        #joystick-zone {
-            position: absolute;
-            bottom: max(30px, env(safe-area-inset-bottom));
-            left: max(40px, env(safe-area-inset-left));
-            width: 140px; height: 140px; z-index: 100; pointer-events: auto;
-            user-select: none; -webkit-tap-highlight-color: transparent;
-        }
-        #joystick-base {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(0, 255, 204, 0.5);
-            border-radius: 50%; box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
-        }
-        #joystick-stick {
-            position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
-            background: rgba(0, 255, 204, 0.7); border-radius: 50%;
-            transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(0, 255, 204, 0.8); pointer-events: none;
-        }
-
         /* BOTÓN PANTALLA COMPLETA */
         #fullscreen-btn {
-            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px;
-            background: rgba(0, 0, 0, 0.6); border: 2px solid #00ffcc; border-radius: 10px;
-            color: #00ffcc; font-size: 28px; font-weight: bold; z-index: 500; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
-            transition: all 0.2s; padding: 0; line-height: 1;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            color: #00ffcc;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
         }
-        #fullscreen-btn:hover { background: rgba(0, 255, 204, 0.2); transform: scale(1.1); }
+        #fullscreen-btn:hover {
+            background: rgba(0, 255, 204, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* FIX IOS: Ajustes específicos para pantallas pequeñas de móviles */
+        @media (max-width: 850px) {
+            #ui-layer { padding: 10px 15px; }
+            .ui-item { font-size: 12px; letter-spacing: 0.5px; }
+            .status-bar-container { width: 100px; height: 12px; }
+            .kills-panel { width: 120px; padding: 8px; font-size: 10px; margin-top: 10px; }
+            #objective-text { font-size: 11px; }
+            #radar-canvas { transform: scale(0.7); transform-origin: bottom left; left: 10px; bottom: 10px; }
+            #mobile-fire-btn { width: 60px; height: 60px; font-size: 25px; bottom: 20px; right: 20px; }
+            #start-screen h1 { font-size: 45px; }
+            .sub-option { padding: 8px 15px; font-size: 14px; }
+        }
+
+        /* FIX PANTALLA VERTICAL: Aviso para forzar apaisado */
+        #rotate-device-warning {
+            display: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050505; color: #00ffcc; z-index: 9999;
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px; box-sizing: border-box;
+            font-size: 24px; font-weight: bold;
+        }
+        @media (orientation: portrait) {
+            #rotate-device-warning { display: flex; }
+        }
     </style>
 </head>
 <body>
+
+<div id="rotate-device-warning">
+    <div style="font-size: 50px; margin-bottom: 20px;">📱 ➡️ 🖥️</div>
+    Por favor, gira tu dispositivo en horizontal para jugar al TenteU-Boot.
+</div>
 
 <div id="game-canvas-container">
     <button id="fullscreen-btn" onclick="toggleFullScreen()" title="Pantalla Completa">⛶</button>
@@ -182,13 +214,14 @@
 
         <div class="controls-info">
             <strong>CONTROLES:</strong><br><br>
-            [Móvil] - Joystick para Navegar / Botón para Torpedo<br>
+            [Móvil] - Inclina para Navegar / Botón para Torpedo<br>
             [PC] - W,A,S,D para Navegar / Espacio para Torpedo
         </div>
 
         <div id="high-scores-container">
             <h3>TOP 5 FLOTA</h3>
-            <div id="high-scores-list"></div>
+            <div id="high-scores-list">
+                </div>
         </div>
 
         <div class="sub-selector">
@@ -268,12 +301,6 @@
     <canvas id="radar-canvas" width="200" height="112" style="display: none;"></canvas>
 
     <button id="mobile-fire-btn" style="display: none;">🎯</button>
-    
-    <div id="joystick-zone" style="display: none;">
-        <div id="joystick-base">
-            <div id="joystick-stick"></div>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -375,7 +402,6 @@
         document.getElementById('bottom-controls').style.display = 'none';
         document.getElementById('radar-canvas').style.display = 'none';
         document.getElementById('mobile-fire-btn').style.display = 'none';
-        document.getElementById('joystick-zone').style.display = 'none';
         document.getElementById('game-over-screen').style.display = 'none';
         document.getElementById('initials-modal').style.display = 'none';
         
@@ -389,16 +415,30 @@
         document.getElementById('bottom-controls').style.display = 'flex';
         document.getElementById('radar-canvas').style.display = 'block';
         
-        // Mostrar botones táctiles si es móvil
+        // Mostrar el botón de disparo solo si detecta que es móvil
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
             document.getElementById('mobile-fire-btn').style.display = 'block';
-            document.getElementById('joystick-zone').style.display = 'block';
         }
         
         if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
         
         savedScore = 0;
         savedTorpedoes = 10;
+        
+        // Lógica para pedir permisos del acelerómetro
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            // iOS 13+
+            DeviceMotionEvent.requestPermission()
+                .then(permissionState => {
+                    if (permissionState === 'granted') {
+                        activarAcelerometro();
+                    }
+                })
+                .catch(console.error);
+        } else {
+            // Android y navegadores antiguos
+            activarAcelerometro();
+        }
 
         startLevel(1);
     }
@@ -438,6 +478,7 @@
         { kills: 28, length: 20000, cargo: 9, meta: 7, dest: 11, frig: 10, miss: 5, drone: 11, mines: 130, fuels: 2, oxygens: 1, ammos: 4, fish: 5 } 
     ];
 
+    // TEXTURA GENERADA DINÁMICAMENTE PARA LA "PÓCIMA T"
     function createTPowerUpTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 128; canvas.height = 128;
@@ -459,6 +500,7 @@
         return new THREE.CanvasTexture(canvas);
     }
     const tPowerUpTexture = createTPowerUpTexture();
+
 
     function playSonarPing() {
         if (isMuted) return;
@@ -711,6 +753,7 @@
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(GAME_WIDTH, GAME_HEIGHT);
+        // Limitar pixel ratio para rendimiento en móviles
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.localClippingEnabled = true;
         
@@ -871,8 +914,8 @@
     function createExplosion(x, y, intensity = 1.0) {
         playExplosionSound();
         gameState.screenShake = 20 * intensity;
-        for(let i = 0; i < 10 * intensity; i++) activeExplosions.push(new ExplosionParticle(x, y, 'fire')); 
-        for(let i = 0; i < 15 * intensity; i++) activeExplosions.push(new ExplosionParticle(x, y, 'smoke')); 
+        for(let i = 0; i < 10 * intensity; i++) activeExplosions.push(new ExplosionParticle(x, y, 'fire')); // Reducido para móvil
+        for(let i = 0; i < 15 * intensity; i++) activeExplosions.push(new ExplosionParticle(x, y, 'smoke')); // Reducido para móvil
     }
 
     let activeBubbles = []; let activeExplosions = []; let activeTorpedoes = []; let activeSplashes = []; let activeLeaks = [];
@@ -951,12 +994,16 @@
         }
         update() {
             if (!this.active) return;
+            
             this.x += this.vx;
             this.y = this.baseY + Math.sin(Date.now() * 0.002 + this.sineOffset) * 10; 
+            
             if (this.y > SURFACE_LEVEL - 40) this.y = SURFACE_LEVEL - 40;
             if (this.y < SEABED_LEVEL + 40) this.y = SEABED_LEVEL + 40;
+            
             this.group.position.set(this.x, this.y, -15);
             this.group.rotation.y = this.vx < 0 ? Math.PI : 0;
+            
             if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
         }
         dispose() { this.active = false; entitiesGroup.remove(this.group); }
@@ -968,6 +1015,7 @@
             this.baseY = SEABED_LEVEL + 50 + Math.random() * (SURFACE_LEVEL - 80 - SEABED_LEVEL); 
             this.y = this.baseY; 
             this.active = true;
+            
             this.group = new THREE.Group(); 
             this.fishes = [];
             const mat = new THREE.MeshStandardMaterial({color: 0x44aaff, roughness: 0.3, metalness: 0.8});
@@ -981,22 +1029,32 @@
                 this.group.add(mesh);
                 this.fishes.push({ mesh: mesh, offsetX: mesh.position.x, offsetY: mesh.position.y, speed: 0.8 + Math.random() * 0.4 });
             }
+            
             this.group.position.set(this.x, this.y, -25); 
             entitiesGroup.add(this.group);
+            
             this.vx = (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.6); 
             this.group.rotation.y = this.vx > 0 ? 0 : Math.PI;
             this.sineOffset = Math.random() * Math.PI * 2; 
         }
+        
         update() {
             if(!this.active) return;
+            
             this.x += this.vx; 
             this.y = this.baseY + Math.sin(Date.now() * 0.001 + this.sineOffset) * 10;
+            
             this.group.position.set(this.x, this.y, -25);
+            
             this.fishes.forEach(f => { 
                 f.mesh.position.y = f.offsetY + Math.sin(Date.now() * 0.005 * f.speed + f.offsetX) * 2; 
             });
-            if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
+            
+            if (this.x < camera.position.x - GAME_WIDTH * 1.5) {
+                this.dispose();
+            }
         }
+        
         dispose() { this.active = false; entitiesGroup.remove(this.group); }
     }
 
@@ -1006,9 +1064,18 @@
             this.baseY = SEABED_LEVEL + 80 + Math.random() * (SURFACE_LEVEL - 120 - SEABED_LEVEL);
             this.y = this.baseY;
             this.active = true;
+
             this.group = new THREE.Group();
             this.jellies = [];
-            const mat = new THREE.MeshStandardMaterial({ color: 0xff88ff, transparent: true, opacity: 0.8, roughness: 0.1, emissive: 0x660066 });
+            
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xff88ff, 
+                transparent: true, 
+                opacity: 0.8, 
+                roughness: 0.1,
+                emissive: 0x660066
+            });
+            
             const geo = new THREE.SphereGeometry(6, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2);
 
             let numJellies = 3 + Math.floor(Math.random() * 4);
@@ -1018,23 +1085,33 @@
                 this.group.add(mesh);
                 this.jellies.push({ mesh: mesh, offsetX: mesh.position.x, offsetY: mesh.position.y, phase: Math.random() * Math.PI * 2 });
             }
+
             this.group.position.set(this.x, this.y, -10);
             entitiesGroup.add(this.group);
+
             this.vx = (Math.random() > 0.5 ? 1 : -1) * (0.1 + Math.random() * 0.15);
             this.sineOffset = Math.random() * Math.PI * 2;
         }
+
         update() {
             if(!this.active) return;
+
             this.x += this.vx;
             this.y = this.baseY + Math.sin(Date.now() * 0.0005 + this.sineOffset) * 25;
+
             this.group.position.set(this.x, this.y, -10);
+
             this.jellies.forEach(j => {
                 let pulse = Math.sin(Date.now() * 0.002 + j.phase);
                 j.mesh.position.y = j.offsetY + pulse * 2.5;
                 j.mesh.scale.set(1 + pulse * 0.2, 1 - pulse * 0.2, 1 + pulse * 0.2);
             });
-            if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
+
+            if (this.x < camera.position.x - GAME_WIDTH * 1.5) {
+                this.dispose();
+            }
         }
+
         dispose() { this.active = false; entitiesGroup.remove(this.group); }
     }
 
@@ -1100,6 +1177,7 @@
                     if (d < minDist && ((this.dirSign > 0 && drone.x > this.x) || (this.dirSign < 0 && drone.x < this.x))) { minDist = d; nearestTarget = {x: drone.x, y: drone.y}; }
                 }
             });
+
             enemyTorpedoesData.forEach(et => {
                 if (et.active) {
                     let d = Math.hypot(et.x - this.x, et.y - this.y);
@@ -1222,7 +1300,7 @@
             this.container.add(this.visualMesh);
             new THREE.TextureLoader().load('carguero_panamal.png', 
                 texture => { material.map = texture; material.opacity = 1; material.needsUpdate = true; },
-                undefined, error => { console.error("Error cargando textura"); }
+                undefined, error => { console.error("Error cargando la textura del carguero."); }
             );
         }
         startSinking() {
@@ -1305,7 +1383,7 @@
             this.container.add(this.visualMesh);
             new THREE.TextureLoader().load('metanero.png', 
                 texture => { material.map = texture; material.opacity = 1; material.needsUpdate = true; },
-                undefined, error => { console.error("Error cargando textura"); }
+                undefined, error => { console.error("Error cargando la textura del metanero."); }
             );
         }
         startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 5.0); }
@@ -1382,7 +1460,7 @@
             this.container.add(this.visualMesh);
             new THREE.TextureLoader().load('Antisubmarino.png',
                 texture => { material.map = texture; material.needsUpdate = true; },
-                undefined, error => { console.error("Error cargando textura"); }
+                undefined, error => { console.error("Error cargando textura destructor"); }
             );
         }
         startSinking() { this.state = 'burning'; this.vx = 0; this.burnStartTime = Date.now(); createExplosion(this.x, this.y, 8.0); }
@@ -1472,7 +1550,7 @@
             this.container.add(this.visualMesh);
             new THREE.TextureLoader().load('fragata.png',
                 texture => { material.map = texture; material.needsUpdate = true; },
-                undefined, error => { console.error("Error cargando textura"); }
+                undefined, error => { console.error("Error cargando textura fragata"); }
             );
         }
         startSinking() {
@@ -1561,12 +1639,15 @@
         constructor(startX) {
             this.x = startX; 
             this.y = SURFACE_LEVEL + 60; 
+            
             this.visualWidth = 720; this.visualHeight = 320;
             this.hitboxWidth = 680; this.hitboxHeight = 160;
+            
             this.baseSpeed = 0.3; 
             this.patrolStartX = startX - 1000; this.patrolEndX = startX + 1000;
             this.patrolDir = Math.random() > 0.5 ? 1 : -1;
             this.vx = this.baseSpeed * this.patrolDir; 
+            
             this.active = true;
             this.state = 'normal'; 
             this.burnStartTime = 0; 
@@ -1574,6 +1655,7 @@
             this.hp = 8; 
             this.lastFired = 0;
             this.lastMineDropped = 0; 
+            
             this.lastKnownPlayerX = null;
             this.suspicionTimer = 0;
 
@@ -1582,6 +1664,7 @@
             entitiesGroup.add(this.container);
             this.setupImageModel();
         }
+
         setupImageModel() {
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
             this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material);
@@ -1591,12 +1674,14 @@
                 undefined, error => { console.error("Error cargando textura missouri"); }
             );
         }
+
         startSinking() {
             this.state = 'burning'; 
             this.vx = 0;
             this.burnStartTime = Date.now();
             createExplosion(this.x, this.y, 20.0);
         }
+
         spawnLoot() {
             let numItems = 4; 
             for(let i = 0; i < numItems; i++) {
@@ -1610,8 +1695,10 @@
             }
             if (Math.random() < 0.10) tPowerUpsData.push(new TPowerUp3DStatic(this.x, this.y - 30, true));
         }
+
         update() {
             if (!this.active) return;
+
             if (this.state === 'normal') {
                 if(gameState.isAutoPiloting) { this.vx = 0; return; }
 
@@ -1636,7 +1723,10 @@
                 }
                 
                 if (currentlyDetected || this.suspicionTimer > 0) {
-                    if (!currentlyDetected) { this.suspicionTimer--; }
+                    
+                    if (!currentlyDetected) {
+                        this.suspicionTimer--;
+                    }
                     
                     let targetX = currentlyDetected ? player2D.x : this.lastKnownPlayerX;
                     let distToTargetX = Math.abs(this.x - targetX);
@@ -1654,21 +1744,26 @@
                         enemyTorpedoesData.push(new EnemyTorpedo3D(this.x, this.y + 10, dirX));
                         enemyTorpedoesData.push(new EnemyTorpedo3D(this.x + (50 * dirX), this.y + 10, dirX));
                     }
+
                     if (now - this.lastMineDropped > 7000) {
                         this.lastMineDropped = now;
                         let offsetX = (Math.random() - 0.5) * 600;
                         sinkingMinesData.push(new SinkingMine3D(this.x + offsetX, this.y - 40));
                     }
+
                 } else {
                     this.vx = this.baseSpeed * this.patrolDir;
                     if (this.x > this.patrolEndX) this.patrolDir = -1;
                     if (this.x < this.patrolStartX) this.patrolDir = 1;
                 }
+
                 this.x += this.vx;
                 this.container.position.x = this.x;
                 this.container.position.y = this.y;
                 this.visualMesh.rotation.y = this.vx > 0 ? Math.PI : 0; 
+
                 if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
+
             } else if (this.state === 'burning') {
                 if (Math.random() > 0.4) {
                     activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 360, this.y + 40, 'fire'));
@@ -1683,14 +1778,22 @@
                 this.y -= 1.0; 
                 this.container.position.y = this.y;
                 this.container.rotation.z = THREE.MathUtils.lerp(this.container.rotation.z, this.targetRotation, 0.015);
+
                 if (Math.random() > 0.4) {
                     activeExplosions.push(new ExplosionParticle(this.x + (Math.random() - 0.5) * 360, this.y + 40, 'smoke'));
                     activeBubbles.push(new BubbleParticle(this.x + (Math.random() - 0.5) * 300, this.y));
                 }
+
                 if (this.y < SURFACE_LEVEL - 250) this.dispose();
             }
         }
-        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
+
+        dispose() {
+            this.active = false;
+            entitiesGroup.remove(this.container);
+            this.visualMesh.geometry.dispose();
+            this.visualMesh.material.dispose();
+        }
     }
 
     class Drone2D {
@@ -1708,6 +1811,9 @@
             this.detectedPlayer = false;
             this.activeTorpedo = null;
             this.ammo = 2; 
+            
+            this.evasionPref = null;
+            
             this.patrolStartX = startX - 600;
             this.patrolEndX = startX + 600;
             this.patrolDir = Math.random() > 0.5 ? 1 : -1;
@@ -1718,6 +1824,7 @@
             entitiesGroup.add(this.container);
             this.setupImageModel();
         }
+        
         setupImageModel() {
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide });
             this.visualMesh = new THREE.Mesh(new THREE.PlaneGeometry(this.visualWidth, this.visualHeight), material);
@@ -1727,11 +1834,13 @@
                 undefined, error => { console.error("Error cargando textura dron"); }
             );
         }
+        
         startSinking() {
             this.state = 'sinking';
             this.vx = 0; this.vy = 0;
             createExplosion(this.x, this.y, 3.0);
         }
+        
         update() {
             if (!this.active) return;
             if (this.state === 'normal') {
@@ -1743,13 +1852,16 @@
                     
                     let hasLoS = checkLineOfSight(this.x, this.y, player2D.x, player2D.y, 20);
 
+                    // Solo nos detecta si estamos a menos de 550 y NO hay rocas de por medio
                     if (distToPlayer < 550 && hasLoS) {
                         this.detectedPlayer = true;
                     } else {
+                        // Si nos escondemos detrás de una roca o nos alejamos, pierde el rastro
                         this.detectedPlayer = false;
                     }
                     
                     if (this.detectedPlayer) {
+
                         if (this.ammo > 0) {
                             let optimalDistMin = 300;
                             let optimalDistMax = 450;
@@ -1781,10 +1893,12 @@
                         } else {
                             if (this.x < player2D.x) this.vx += this.acceleration * 1.5;
                             else this.vx -= this.acceleration * 1.5;
+                            
                             if (this.y < player2D.y) this.vy += this.acceleration * 1.5;
                             else this.vy -= this.acceleration * 1.5;
                         }
                     } else {
+                        // Modo patrulla estándar cuando no ve al submarino
                         this.vx += (this.patrolSpeed * this.patrolDir - this.vx) * 0.05;
                         this.vy *= this.friction; 
                         if (this.x > this.patrolEndX) this.patrolDir = -1;
@@ -1805,11 +1919,17 @@
                     if (dist < radius) {
                         let overlap = radius - dist;
                         let dir = Math.atan2(this.y - rock.y, this.x - rock.x);
+                        
                         this.x += Math.cos(dir) * overlap;
                         this.y += Math.sin(dir) * overlap;
-                        let nx = Math.cos(dir); let ny = Math.sin(dir);
-                        let tx = -ny; let ty = nx;  
+                        
+                        let nx = Math.cos(dir);
+                        let ny = Math.sin(dir);
+                        let tx = -ny; 
+                        let ty = nx;  
+                        
                         let dot = this.vx * tx + this.vy * ty;
+                        
                         this.vx = tx * dot * 0.95 + nx * 0.05; 
                         this.vy = ty * dot * 0.95 + ny * 0.05;
                     }
@@ -1821,14 +1941,19 @@
                 this.container.position.x = this.x;
                 this.container.position.y = this.y;
                 
-                if (this.detectedPlayer) { this.visualMesh.rotation.y = this.x < player2D.x ? Math.PI : 0; } 
-                else { this.visualMesh.rotation.y = this.vx > 0 ? Math.PI : 0; }
+                if (this.detectedPlayer) {
+                    this.visualMesh.rotation.y = this.x < player2D.x ? Math.PI : 0;
+                } else {
+                    this.visualMesh.rotation.y = this.vx > 0 ? Math.PI : 0;
+                }
 
                 if (Math.random() > 0.5 && (Math.abs(this.vx) > 0.1 || Math.abs(this.vy) > 0.1)) {
                     let tailOffset = this.vx > 0 ? -this.visualWidth * 0.4 : this.visualWidth * 0.4;
                     activeBubbles.push(new BubbleParticle(this.x + tailOffset, this.y));
                 }
+                
                 if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
+                
             } else if (this.state === 'sinking') {
                 this.y -= 2; 
                 this.container.position.y = this.y;
@@ -1837,42 +1962,72 @@
                 if (this.y < SEABED_LEVEL - 50) this.dispose();
             }
         }
-        dispose() { this.active = false; entitiesGroup.remove(this.container); this.visualMesh.geometry.dispose(); this.visualMesh.material.dispose(); }
+        
+        dispose() {
+            this.active = false;
+            entitiesGroup.remove(this.container);
+            this.visualMesh.geometry.dispose();
+            this.visualMesh.material.dispose();
+        }
     }
 
     class SinkingMine3D {
         constructor(x, y) {
-            this.x = x; this.y = y; this.size = 10; this.active = true; this.vy = -0.6; 
+            this.x = x; 
+            this.y = y; 
+            this.size = 10; 
+            this.active = true;
+            this.vy = -0.6; 
+            
             this.mesh = new THREE.Group();
+            
             const mat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.3 });
             const body = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 14, 12), mat);
             body.rotation.x = Math.PI / 2;
+            
             const redBand = new THREE.Mesh(new THREE.CylinderGeometry(6.2, 6.2, 3, 12), new THREE.MeshBasicMaterial({ color: 0xaa0000 }));
             redBand.rotation.x = Math.PI / 2;
-            this.mesh.add(body); this.mesh.add(redBand);
+
+            this.mesh.add(body);
+            this.mesh.add(redBand);
+            
             this.mesh.position.set(this.x, this.y, 10);
             entitiesGroup.add(this.mesh);
         }
+        
         update() {
             if (!this.active) return;
+            
             let hitSurface = false;
             for (let i = 0; i < rocksData.length; i++) {
                 let rock = rocksData[i];
                 if (rock.active && Math.abs(rock.x - this.x) < rock.size * 0.75) {
                     let rockTop = rock.y + rock.size * 0.75;
                     if (this.y + this.vy <= rockTop + this.size && this.y > rock.y) {
-                        this.y = rockTop + this.size; hitSurface = true; break;
+                        this.y = rockTop + this.size;
+                        hitSurface = true;
+                        break;
                     }
                 }
             }
             if (!hitSurface) {
-                if (this.y > SEABED_LEVEL + this.size) { this.y += this.vy; } else { this.y = SEABED_LEVEL + this.size; }
+                if (this.y > SEABED_LEVEL + this.size) {
+                    this.y += this.vy; 
+                } else {
+                    this.y = SEABED_LEVEL + this.size; 
+                }
             }
+            
             this.mesh.position.set(this.x, this.y, 10);
             this.mesh.rotation.z += 0.01; 
+            
             if (this.x < camera.position.x - GAME_WIDTH * 1.5) this.dispose();
         }
-        dispose() { this.active = false; entitiesGroup.remove(this.mesh); }
+        
+        dispose() { 
+            this.active = false; 
+            entitiesGroup.remove(this.mesh); 
+        }
     }
 
     class Submarine2D {
@@ -1891,6 +2046,7 @@
             this.setupImageModel();
         }
         setupImageModel() {
+            // Aura de inmunidad - ÓVALO PERFECTO
             const auraMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
             this.auraMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 32), auraMat);
             this.auraMesh.scale.set(this.visualWidth * 0.55, this.visualHeight * 0.6, 1);
@@ -1920,7 +2076,7 @@
                 if (gameState.torpedoes > 0 && this.y < SURFACE_LEVEL) { 
                     gameState.torpedoes--; this.lastFired = now;
                     let shotVy = this.vy;
-                    if (keys['ArrowDown'] || keys['s'] || keys['S'] || (joystick.active && joystick.y < -0.5)) { shotVy -= 4.0; }
+                    if (keys['ArrowDown'] || keys['s'] || keys['S']) { shotVy -= 4.0; }
                     
                     let dirSign = this.facingRight ? 1 : -1;
                     let spawnX = this.x + (this.visualWidth * 0.45 * dirSign);
@@ -1946,6 +2102,7 @@
                 let targetY = SEABED_LEVEL + 350; 
                 
                 this.container.position.z = 300; 
+                
                 this.visualMesh.renderOrder = 999;
                 this.visualMesh.material.depthTest = false;
                 
@@ -1979,21 +2136,10 @@
 
             let isAccelerating = false;
             if (gameState.fuel > 0) {
-                // Teclado
                 if (keys['ArrowUp'] || keys['w'] || keys['W']) { this.vy += this.acceleration; isAccelerating = true; }
                 if (keys['ArrowDown'] || keys['s'] || keys['S']) { this.vy -= this.acceleration; isAccelerating = true; }
-                if (keys['ArrowLeft'] || keys['a'] || keys['A']) { this.vx -= this.acceleration; isAccelerating = true; this.facingRight = false; }
-                if (keys['ArrowRight'] || keys['d'] || keys['D']) { this.vx += this.acceleration; isAccelerating = true; this.facingRight = true; }
-                
-                // Joystick
-                if (joystick.active) {
-                    this.vx += joystick.x * this.acceleration * 1.2;
-                    this.vy -= joystick.y * this.acceleration * 1.2; // Invertido para que "arriba" empuje en +Y
-                    isAccelerating = true;
-                    if (joystick.x > 0.2) this.facingRight = true;
-                    if (joystick.x < -0.2) this.facingRight = false;
-                }
-
+                if (keys['ArrowLeft'] || keys['a'] || keys['A']) { this.vx -= this.acceleration; isAccelerating = true; }
+                if (keys['ArrowRight'] || keys['d'] || keys['D']) { this.vx += this.acceleration; isAccelerating = true; }
                 if (isAccelerating) {
                     gameState.fuel -= gameState.fuelDepletionRate;
                     if (gameState.fuel <= 0) gameState.fuel = 0;
@@ -2160,12 +2306,20 @@
                         if (rock.active && Math.abs(rock.x - this.x) < rock.size * 0.75) {
                             let rockTop = rock.y + rock.size * 0.75;
                             if (this.baseY <= rockTop + this.size && this.baseY > rock.y) {
-                                this.baseY = rockTop + this.size; hitSurface = true; break;
+                                this.baseY = rockTop + this.size;
+                                hitSurface = true;
+                                break;
                             }
                         }
                     }
-                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) { this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true; }
-                    if (hitSurface) { this.falling = false; this.spawnTime = Date.now(); }
+                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) {
+                        this.baseY = SEABED_LEVEL + this.size + 10;
+                        hitSurface = true;
+                    }
+                    if (hitSurface) {
+                        this.falling = false;
+                        this.spawnTime = Date.now();
+                    }
                 } else {
                     let age = Date.now() - this.spawnTime;
                     if (age > this.lifespan) { this.dispose(); return; }
@@ -2210,12 +2364,20 @@
                         if (rock.active && Math.abs(rock.x - this.x) < rock.size * 0.75) {
                             let rockTop = rock.y + rock.size * 0.75;
                             if (this.baseY <= rockTop + this.size && this.baseY > rock.y) {
-                                this.baseY = rockTop + this.size; hitSurface = true; break;
+                                this.baseY = rockTop + this.size;
+                                hitSurface = true;
+                                break;
                             }
                         }
                     }
-                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) { this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true; }
-                    if (hitSurface) { this.falling = false; this.spawnTime = Date.now(); }
+                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) {
+                        this.baseY = SEABED_LEVEL + this.size + 10;
+                        hitSurface = true;
+                    }
+                    if (hitSurface) {
+                        this.falling = false;
+                        this.spawnTime = Date.now();
+                    }
                 } else {
                     let age = Date.now() - this.spawnTime;
                     if (age > this.lifespan) { this.dispose(); return; }
@@ -2260,12 +2422,20 @@
                         if (rock.active && Math.abs(rock.x - this.x) < rock.size * 0.75) {
                             let rockTop = rock.y + rock.size * 0.75;
                             if (this.baseY <= rockTop + this.size && this.baseY > rock.y) {
-                                this.baseY = rockTop + this.size; hitSurface = true; break;
+                                this.baseY = rockTop + this.size;
+                                hitSurface = true;
+                                break;
                             }
                         }
                     }
-                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) { this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true; }
-                    if (hitSurface) { this.falling = false; this.spawnTime = Date.now(); }
+                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) {
+                        this.baseY = SEABED_LEVEL + this.size + 10;
+                        hitSurface = true;
+                    }
+                    if (hitSurface) {
+                        this.falling = false;
+                        this.spawnTime = Date.now();
+                    }
                 } else {
                     let age = Date.now() - this.spawnTime;
                     if (age > this.lifespan) { this.dispose(); return; }
@@ -2279,6 +2449,7 @@
         dispose() { this.active = false; entitiesGroup.remove(this.mesh); }
     }
 
+    // CAJA DE HERRAMIENTAS (Materiales / Salud)
     class Material3DStatic {
         constructor(x, y, isLoot = false) {
             this.x = x; this.baseY = y; this.active = true; this.size = 14; 
@@ -2289,13 +2460,16 @@
             
             this.mesh = new THREE.Group();
             
+            // Base roja
             const boxMat = new THREE.MeshStandardMaterial({ color: 0xcc1111, roughness: 0.7 });
             const box = new THREE.Mesh(new THREE.BoxGeometry(22, 14, 12), boxMat);
             
+            // Cruz verde brillante para que se vea perfectamente
             const crossMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
             const crossV = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 12.5), crossMat);
             const crossH = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 12.5), crossMat);
             
+            // Asa de la caja
             const handleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
             const handleTop = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 10, 8), handleMat);
             handleTop.rotation.z = Math.PI / 2;
@@ -2314,6 +2488,7 @@
 
             this.mesh.position.set(this.x, this.baseY, 10);
             this.floatOffset = Math.random() * Math.PI; 
+            // Rotación inicial aleatoria en Y
             this.mesh.rotation.y = Math.random() * Math.PI; 
             entitiesGroup.add(this.mesh);
         }
@@ -2329,15 +2504,19 @@
                         if (rock.active && Math.abs(rock.x - this.x) < rock.size * 0.75) {
                             let rockTop = rock.y + rock.size * 0.75;
                             if (this.baseY <= rockTop + this.size && this.baseY > rock.y) {
-                                this.baseY = rockTop + this.size; hitSurface = true; break;
+                                this.baseY = rockTop + this.size;
+                                hitSurface = true;
+                                break;
                             }
                         }
                     }
                     if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) {
-                        this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true;
+                        this.baseY = SEABED_LEVEL + this.size + 10;
+                        hitSurface = true;
                     }
                     if (hitSurface) {
-                        this.falling = false; this.spawnTime = Date.now();
+                        this.falling = false;
+                        this.spawnTime = Date.now();
                     }
                 } else {
                     let age = Date.now() - this.spawnTime;
@@ -2347,11 +2526,13 @@
             }
             this.y = this.baseY + (this.falling ? 0 : Math.sin(Date.now() * 0.004 + this.floatOffset) * 6);
             this.mesh.position.y = this.y;
+            // Gira sobre su eje vertical para ser más dinámico
             if (!this.falling) { this.mesh.rotation.y += 0.015; }
         }
         dispose() { this.active = false; entitiesGroup.remove(this.mesh); }
     }
 
+    // CLASE PARA LA RECOMPENSA "T"
     class TPowerUp3DStatic {
         constructor(x, y, isLoot = false) {
             this.x = x; this.baseY = y; this.active = true; this.size = 12; 
@@ -2384,8 +2565,12 @@
                             }
                         }
                     }
-                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) { this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true; }
-                    if (hitSurface) { this.falling = false; this.spawnTime = Date.now(); }
+                    if (!hitSurface && this.baseY <= SEABED_LEVEL + this.size + 10) {
+                        this.baseY = SEABED_LEVEL + this.size + 10; hitSurface = true;
+                    }
+                    if (hitSurface) {
+                        this.falling = false; this.spawnTime = Date.now();
+                    }
                 } else {
                     let age = Date.now() - this.spawnTime;
                     if (age > this.lifespan) { this.dispose(); return; }
@@ -2537,6 +2722,7 @@
             torpedoAmmoData.push(new TorpedoAmmo3DStatic(tx, ty, false));
         }
         
+        // AGREGADO: Generar materiales (vida) aleatorios por el mapa
         let materialsCount = Math.floor(cfg.fuels * 0.7); 
         for (let i = 0; i < materialsCount; i++) {
             let mx = 1200 + Math.random() * (LEVEL_END_X - 1800);
@@ -2683,6 +2869,7 @@
             seabedMesh.position.x = camera.position.x; 
             directionalLight.position.x = camera.position.x + 300;
 
+            // Uso de bucles inversos con splice para evitar fugas de memoria
             for (let i = rocksData.length - 1; i >= 0; i--) {
                 let rock = rocksData[i]; rock.update(); if (!rock.active) rocksData.splice(i, 1);
             }
@@ -2794,6 +2981,7 @@
     }
 
     function updatePressureDamage() {
+        // Bloquear el daño por presión si se tiene la inmunidad activa
         if (gameState.invulnerabilityTimer > Date.now()) return;
 
         if (gameState.depth > 200) {
@@ -3010,6 +3198,8 @@
                 }
             });
             if (hitRock) return;
+
+            // Bloque de autodaño eliminado aquí
         });
 
         tPowerUpsData.forEach(tp => {
@@ -3240,6 +3430,41 @@
         }
     }
 
+    // Funciones añadidas para soporte táctil y acelerómetro
+    function activarAcelerometro() {
+        window.addEventListener('devicemotion', (e) => {
+            if (!gameState.isRunning || gameState.isAutoPiloting || gameState.isPaused) return;
+
+            let gravX = e.accelerationIncludingGravity.x;
+            let gravY = e.accelerationIncludingGravity.y;
+
+            if (gravX === null || gravY === null) return;
+
+            keys['w'] = false; keys['s'] = false;
+            keys['a'] = false; keys['d'] = false;
+
+            const deadZone = 1.5;
+            let orientation = window.orientation || (screen.orientation || {}).angle || 0;
+
+            if (orientation === 90 || orientation === -270) {
+                if (gravY > deadZone) keys['w'] = true;
+                if (gravY < -deadZone) keys['s'] = true;
+                if (gravX < -deadZone) keys['d'] = true;
+                if (gravX > deadZone) keys['a'] = true;
+            } else if (orientation === -90 || orientation === 270) {
+                if (gravY < -deadZone) keys['w'] = true;
+                if (gravY > deadZone) keys['s'] = true;
+                if (gravX > deadZone) keys['d'] = true;
+                if (gravX < -deadZone) keys['a'] = true;
+            } else {
+                if (gravY < -deadZone) keys['w'] = true;
+                if (gravY > deadZone) keys['s'] = true;
+                if (gravX > deadZone) keys['d'] = true;
+                if (gravX < -deadZone) keys['a'] = true;
+            }
+        });
+    }
+
     const fireBtn = document.getElementById('mobile-fire-btn');
     fireBtn.addEventListener('touchstart', (e) => {
         e.preventDefault(); 
@@ -3252,51 +3477,6 @@
         e.preventDefault();
         keys[' '] = false; 
     }, {passive: false});
-
-    // --- LÓGICA DEL JOYSTICK VIRTUAL ---
-    let joystick = { x: 0, y: 0, active: false };
-    const joyZone = document.getElementById('joystick-zone');
-    const joyStick = document.getElementById('joystick-stick');
-    let joyCenter = { x: 0, y: 0 };
-    let joyMaxRadius = 40; 
-
-    joyZone.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const rect = joyZone.getBoundingClientRect();
-        joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        joystick.active = true;
-        updateJoystick(e.touches[0]);
-    }, {passive: false});
-
-    joyZone.addEventListener('touchmove', (e) => {
-        if (!joystick.active) return;
-        e.preventDefault();
-        updateJoystick(e.touches[0]);
-    }, {passive: false});
-
-    const resetJoystick = (e) => {
-        e.preventDefault();
-        joystick.active = false; joystick.x = 0; joystick.y = 0;
-        joyStick.style.transform = `translate(-50%, -50%)`;
-    };
-    joyZone.addEventListener('touchend', resetJoystick, {passive: false});
-    joyZone.addEventListener('touchcancel', resetJoystick, {passive: false});
-
-    function updateJoystick(touch) {
-        let dx = touch.clientX - joyCenter.x;
-        let dy = touch.clientY - joyCenter.y;
-        let distance = Math.hypot(dx, dy);
-        
-        if (distance > joyMaxRadius) {
-            dx = (dx / distance) * joyMaxRadius;
-            dy = (dy / distance) * joyMaxRadius;
-        }
-        
-        joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        
-        joystick.x = dx / joyMaxRadius;
-        joystick.y = dy / joyMaxRadius; 
-    }
 
     // Controles tradicionales de PC
     window.addEventListener('keydown', e => { 
