@@ -113,11 +113,11 @@
         #restart-full-btn { background: linear-gradient(to bottom, #ff9966, #ff5e62); color: white; box-shadow: 0 6px 25px rgba(255, 94, 98, 0.6); }
         #restart-full-btn:hover { box-shadow: 0 10px 30px rgba(255, 94, 98, 0.8); }
 
-        #bottom-controls { position: absolute; bottom: 25px; right: 40px; z-index: 50; display: flex; gap: 15px; pointer-events: none; }
+        #bottom-controls { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; gap: 15px; pointer-events: none; }
         .bottom-btn { padding: 12px 24px; font-size: 18px; background: linear-gradient(to bottom, #444, #222); border: 2px solid #777; box-shadow: 0 4px 10px rgba(0,0,0,0.8); pointer-events: auto; cursor: pointer; color: white; border-radius: 8px; transition: all 0.2s ease; letter-spacing: normal; text-transform: none; }
         .bottom-btn:hover { background: linear-gradient(to bottom, #555, #333); box-shadow: 0 6px 15px rgba(0,0,0,0.9); transform: none; }
 
-        #radar-canvas { position: absolute; bottom: 25px; left: 40px; z-index: 10; background-color: #021102; border: 3px solid #00ff00; border-radius: 0 0 100px 100px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3); pointer-events: none; }
+        #radar-canvas { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10; background-color: #021102; border: 3px solid #00ff00; border-top: none; border-radius: 0 0 100px 100px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3); pointer-events: none; }
         
         /* BOTÓN DE DISPARO MÓVIL */
         #mobile-fire-btn {
@@ -205,7 +205,9 @@
             .status-bar-container { width: 100px; height: 12px; }
             .kills-panel { width: 120px; padding: 8px; font-size: 10px; margin-top: 10px; }
             #objective-text { font-size: 11px; }
-            #radar-canvas { transform: scale(0.7); transform-origin: bottom left; left: 10px; bottom: 10px; }
+            #radar-canvas { top: 0; left: 50%; bottom: auto; transform: translateX(-50%) scale(0.7); transform-origin: top center; }
+            #bottom-controls { bottom: 10px; gap: 8px; width: max-content; }
+            .bottom-btn { padding: 6px 12px; font-size: 12px; }
             #mobile-fire-btn { width: 60px; height: 60px; font-size: 25px; bottom: 20px; right: 20px; }
             #start-screen h1 { font-size: 45px; }
             .sub-option { padding: 8px 15px; font-size: 14px; }
