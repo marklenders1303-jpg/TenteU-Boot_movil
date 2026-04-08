@@ -67,15 +67,20 @@
         #initials-input:focus { box-shadow: 0 0 20px rgba(0,255,204,0.5); }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 25px 40px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 20%); z-index: 5; }
-        .ui-section { display: flex; flex-direction: column; gap: 8px; }
-        .ui-item { font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,1); letter-spacing: 1.5px; }
         
-        .status-bar-container { width: 180px; height: 20px; background-color: #111; border-radius: 10px; border: 2px solid #666; overflow: hidden; margin-top: 5px; box-shadow: inset 0 2px 6px rgba(0,0,0,1); }
+        /* INTERFAZ GENERAL REAJUSTADA */
+        .ui-section { display: flex; flex-direction: column; gap: 4px; }
+        .ui-section.right-ui { align-items: flex-end; text-align: right; }
+        .ui-item { font-size: 15px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,1); letter-spacing: 1px; }
+        
+        /* BARRAS MÁS PEQUEÑAS Y AJUSTADAS */
+        .status-bar-container { width: 140px; height: 14px; background-color: #111; border-radius: 8px; border: 2px solid #555; overflow: hidden; margin-top: 2px; margin-bottom: 4px; box-shadow: inset 0 2px 6px rgba(0,0,0,1); }
         #health-bar-fill { width: 100%; height: 100%; background: linear-gradient(to right, #00ff00 0%, #00aa00 100%); transition: width 0.1s linear, background 0.3s ease; }
         #oxygen-bar-fill { width: 100%; height: 100%; background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%); transition: width 0.1s linear, background 0.3s ease; }
         #fuel-bar-fill { width: 100%; height: 100%; background: linear-gradient(to right, #00aa00 0%, #00ff00 100%); transition: width 0.1s linear, background 0.3s ease; }
 
-        .kills-panel { margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 14px; color: #ccc; display: flex; flex-direction: column; gap: 6px; width: 180px; box-sizing: border-box; }
+        /* TABLA DE ENEMIGOS AJUSTADA */
+        .kills-panel { margin-top: 10px; padding: 12px; background: rgba(0, 0, 0, 0.6); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; color: #ccc; display: flex; flex-direction: column; gap: 5px; width: 160px; box-sizing: border-box; }
         .kills-title { color: #fff; font-weight: bold; margin-bottom: 5px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 5px; }
         #objective-text { color: #ff4d4d; font-weight: 900; text-align: center; margin-bottom: 8px; font-size: 16px; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
         .kill-row { display: flex; justify-content: space-between; align-items: center; }
@@ -198,12 +203,12 @@
             transform: scale(1.1);
         }
 
-        /* FIX IOS: Ajustes específicos para pantallas pequeñas de móviles */
+        /* FIX IOS Y AJUSTES MÓVILES */
         @media (max-width: 850px) {
             #ui-layer { padding: 10px 15px; }
-            .ui-item { font-size: 12px; letter-spacing: 0.5px; }
-            .status-bar-container { width: 100px; height: 12px; }
-            .kills-panel { width: 120px; padding: 8px; font-size: 10px; margin-top: 10px; }
+            .ui-item { font-size: 11px; letter-spacing: 0px; }
+            .status-bar-container { width: 90px; height: 10px; margin-top: 1px; margin-bottom: 2px; }
+            .kills-panel { width: 115px; padding: 6px; font-size: 10px; margin-top: 5px; }
             #objective-text { font-size: 11px; }
             #radar-canvas { top: 0; left: 50%; bottom: auto; transform: translateX(-50%) scale(0.7); transform-origin: top center; }
             #bottom-controls { bottom: 10px; gap: 8px; width: max-content; }
@@ -275,12 +280,11 @@
 
     <div id="ui-layer" style="display: none;">
         <div class="ui-section left-ui">
-            <div class="ui-item">PUNTUACIÓN: <span id="score-display">000000</span></div>
-            <div class="ui-item" style="color: #00ffcc; margin-top: 5px;">NIVEL: <span id="level-display">1</span></div>
-            <div class="ui-item" style="margin-top: 10px;">INTEGRIDAD: <span id="health-text">100%</span></div>
-            <div class="status-bar-container"><div id="health-bar-fill"></div></div>
-            <div class="ui-item" style="margin-top: 10px;">PROFUNDIDAD: <span id="depth-display">0m</span></div>
-            <div class="ui-item" style="color: #ffaa00; margin-top: 5px;">TORPEDOS: <span id="torpedoes-display">10</span></div>
+            <div class="ui-item">OXÍGENO: <span id="oxygen-text">100%</span></div>
+            <div class="status-bar-container"><div id="oxygen-bar-fill"></div></div>
+            
+            <div class="ui-item" style="margin-top: 5px;">COMBUSTIBLE: <span id="fuel-text">100%</span></div>
+            <div class="status-bar-container"><div id="fuel-bar-fill"></div></div>
             
             <div class="kills-panel">
                 <div class="kills-title">ABATIDOS</div>
@@ -295,11 +299,15 @@
         </div>
 
         <div class="ui-section right-ui">
-            <div class="ui-item">OXÍGENO: <span id="oxygen-text">100%</span></div>
-            <div class="status-bar-container"><div id="oxygen-bar-fill"></div></div>
-            <div class="ui-item" style="margin-top: 10px;">COMBUSTIBLE: <span id="fuel-text">100%</span></div>
-            <div class="status-bar-container"><div id="fuel-bar-fill"></div></div>
-            <div class="ui-item" style="margin-top: 10px; color: #aaffaa;">PROGRESO: <span id="progress-text">0%</span></div>
+            <div class="ui-item">PUNTUACIÓN: <span id="score-display">000000</span></div>
+            <div class="ui-item" style="color: #00ffcc;">NIVEL: <span id="level-display">1</span></div>
+            
+            <div class="ui-item" style="margin-top: 10px;">INTEGRIDAD: <span id="health-text">100%</span></div>
+            <div class="status-bar-container"><div id="health-bar-fill"></div></div>
+            
+            <div class="ui-item" style="margin-top: 5px;">PROFUNDIDAD: <span id="depth-display">0m</span></div>
+            <div class="ui-item" style="color: #ffaa00;">TORPEDOS: <span id="torpedoes-display">10</span></div>
+            <div class="ui-item" style="margin-top: 15px; color: #aaffaa;">PROGRESO: <span id="progress-text">0%</span></div>
         </div>
     </div>
     
@@ -3294,8 +3302,9 @@
         let progress = Math.max(0, Math.min(100, (player2D.x / LEVEL_END_X) * 100));
         progressText.textContent = Math.floor(progress) + '%';
 
-        healthText.textContent = Math.max(0, Math.floor(gameState.health)) + '%';
-        const healthPercentage = (gameState.health / gameState.maxHealth) * 100;
+        // --- FIX DEFINITIVO DE LA BARRA DE INTEGRIDAD ---
+        const healthPercentage = Math.max(0, Math.min(100, (gameState.health / gameState.maxHealth) * 100));
+        healthText.textContent = Math.floor(gameState.health) + '%';
         
         if (gameState.invulnerabilityTimer > Date.now()) {
             healthBarFill.style.width = '100%';
@@ -3304,14 +3313,14 @@
             healthText.style.color = '#00ffff';
         } else {
             healthText.style.color = 'white';
-            healthBarFill.style.width = Math.max(0, healthPercentage) + '%';
+            healthBarFill.style.width = healthPercentage + '%';
             if (healthPercentage < 25) healthBarFill.style.background = 'linear-gradient(to right, #ff0000 0%, #cc0000 100%)';
             else if (healthPercentage < 50) healthBarFill.style.background = 'linear-gradient(to right, #ffcc00 0%, #ff9900 100%)';
             else healthBarFill.style.background = 'linear-gradient(to right, #00ff00 0%, #00aa00 100%)';
         }
 
+        const oxygenPercentage = Math.max(0, Math.min(100, (gameState.oxygen / gameState.maxOxygen) * 100));
         oxygenText.textContent = Math.floor(gameState.oxygen) + '%';
-        const oxygenPercentage = (gameState.oxygen / gameState.maxOxygen) * 100;
         oxygenBarFill.style.width = oxygenPercentage + '%';
         if (oxygenPercentage < 20) oxygenBarFill.style.background = 'linear-gradient(to right, #ff0000 0%, #cc0000 100%)';
         else if (oxygenPercentage < 50) oxygenBarFill.style.background = 'linear-gradient(to right, #ffcc00 0%, #ff9900 100%)';
@@ -3319,8 +3328,8 @@
 
         if (oxygenPercentage < 25) { oxygenWarning.style.visibility = 'visible'; } else { oxygenWarning.style.visibility = 'hidden'; }
 
+        const fuelPercentage = Math.max(0, Math.min(100, (gameState.fuel / gameState.maxFuel) * 100));
         fuelText.textContent = Math.floor(gameState.fuel) + '%';
-        const fuelPercentage = (gameState.fuel / gameState.maxFuel) * 100;
         fuelBarFill.style.width = fuelPercentage + '%';
         if (fuelPercentage < 20) fuelBarFill.style.background = 'linear-gradient(to right, #ff0000 0%, #cc0000 100%)';
         else if (fuelPercentage < 50) fuelBarFill.style.background = 'linear-gradient(to right, #ff8c00 0%, #ffcc00 100%)';
