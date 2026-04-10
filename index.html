@@ -3547,8 +3547,14 @@
         if (Math.abs(dx) > deadzone || Math.abs(dy) > deadzone) {
             if (dy < -deadzone) keys['w'] = true; 
             if (dy > deadzone) keys['s'] = true;  
-            if (dx < -deadzone) keys['a'] = true; 
-            if (dx > deadzone) keys['d'] = true;  
+            if (dx < -deadzone) {
+                keys['a'] = true; 
+                if (player2D && !gameState.isAutoPiloting) player2D.facingRight = false;
+            } 
+            if (dx > deadzone) {
+                keys['d'] = true;  
+                if (player2D && !gameState.isAutoPiloting) player2D.facingRight = true;
+            }  
         }
     }
 
